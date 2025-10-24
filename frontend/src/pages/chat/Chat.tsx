@@ -180,6 +180,11 @@ const Chat = () => {
   }
 
   const makeApiRequestWithoutCosmosDB = async (question: ChatMessage["content"], conversationId?: string) => {
+    // Reset message state variables for new request
+    assistantMessage = {} as ChatMessage
+    toolMessage = {} as ChatMessage
+    assistantContent = ''
+    
     setIsLoading(true)
     setShowLoadingMessage(true)
     const abortController = new AbortController()
@@ -307,6 +312,11 @@ const Chat = () => {
   }
 
   const makeApiRequestWithCosmosDB = async (question: ChatMessage["content"], conversationId?: string) => {
+    // Reset message state variables for new request
+    assistantMessage = {} as ChatMessage
+    toolMessage = {} as ChatMessage
+    assistantContent = ''
+    
     setIsLoading(true)
     setShowLoadingMessage(true)
     const abortController = new AbortController()
