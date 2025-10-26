@@ -273,9 +273,13 @@ const Chat = () => {
             }
           })
         }
-        conversation.messages.push(toolMessage, assistantMessage)
+        isEmpty(toolMessage)
+          ? conversation.messages.push(assistantMessage)
+          : conversation.messages.push(toolMessage, assistantMessage)
         appStateContext?.dispatch({ type: 'UPDATE_CURRENT_CHAT', payload: conversation })
-        setMessages([...messages, toolMessage, assistantMessage])
+        isEmpty(toolMessage)
+          ? setMessages([...messages, assistantMessage])
+          : setMessages([...messages, toolMessage, assistantMessage])
       }
     } catch (e) {
       if (!abortController.signal.aborted) {
