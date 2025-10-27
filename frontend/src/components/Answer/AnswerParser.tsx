@@ -80,18 +80,18 @@ const extractPromptFlowCitations = (answer: AskResponse): Citation[] => {
     debugLog(`[PromptFlow Citation Parser] Processing item ${i + 1}/${cits.length}:`, safeStringify(pf, 500))
 
     // Only treat as Prompt Flow if PF-specific keys exist
-    const hasPFKeys = pf && (pf.docID != null || pf.pageSource != null || pf.URL != null)
+    const hasPFKeys = pf && (pf.docId != null || pf.page != null || pf.url != null || pf.source)
     if (!hasPFKeys) {
       debugLog('[PromptFlow Citation Parser] ⚠ Item lacks PF keys {docID,pageSource,URL} - skipping')
       continue
     }
 
     const citation: Citation = {
-      id: pf.docID ?? String(i + 1),
+      id: pf.docId ?? String(i + 1),
       content: pf.content ?? '',
       title: pf.title ?? null,
-      filepath: pf.pageSource ?? null,
-      url: pf.URL ?? null,
+      filepath: pf.source ?? null,
+      url: pf.url ?? null,
       metadata: pf?.page != null ? JSON.stringify({ page: pf.page }) : (pf?.metadata ?? null),
       chunk_id: pf?.chunk_id ?? null,
       reindex_id: null,
