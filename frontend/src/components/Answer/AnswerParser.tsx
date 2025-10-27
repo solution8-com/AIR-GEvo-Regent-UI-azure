@@ -14,7 +14,7 @@ const isDebugEnabled = (): boolean => {
   if (typeof window !== 'undefined') {
     return !!(window as any).ENABLE_CITATION_DEBUG
   }
-  return false
+  return true
 }
 
 // Safe JSON stringification with size limit to avoid performance issues
