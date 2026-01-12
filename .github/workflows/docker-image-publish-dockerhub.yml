@@ -26,6 +26,7 @@ jobs:
           echo "TIMESTAMP=$TIMESTAMP" >> $env:GITHUB_OUTPUT
 
       - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -52,6 +53,8 @@ jobs:
           $TAG_SHA = "${IMAGE_BASE}:${{ steps.meta.outputs.SHORT_SHA }}"
           $TAG_TIMESTAMP = "${IMAGE_BASE}:${{ steps.meta.outputs.TIMESTAMP }}"
 
-          docker push $TAG_LATEST
-          docker push $TAG_SHA
-          docker push $TAG_TIMESTAMP
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            docker push $TAG_LATEST
+            docker push $TAG_SHA
+            docker push $TAG_TIMESTAMP
+          fi
