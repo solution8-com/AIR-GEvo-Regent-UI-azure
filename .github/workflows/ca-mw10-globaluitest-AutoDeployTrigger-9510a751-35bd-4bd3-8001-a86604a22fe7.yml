@@ -5,8 +5,8 @@ on:
   # Automatically trigger it when detected changes in repo
   push:
     branches: 
-      [ main ]
-    paths:
+      - main
+    paths: 
     - '**'
     - '.github/workflows/ca-mw10-globaluitest-AutoDeployTrigger-9510a751-35bd-4bd3-8001-a86604a22fe7.yml'
 
@@ -16,7 +16,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    permissions: 
+    permissions:  
       id-token: write #This is required for requesting the OIDC JWT Token
       contents: read #Required when GH token is used to authenticate with private repo
 
@@ -31,15 +31,15 @@ jobs:
           tenant-id: ${{ secrets.CAMW10GLOBALUITEST_AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.CAMW10GLOBALUITEST_AZURE_SUBSCRIPTION_ID }}
 
-      - name:  Build and push container image to registry
+      - name: Build and push container image to registry
         uses: azure/container-apps-deploy-action@v2
         with:
-          appSourcePath:  ${{ github.workspace }}
-          dockerfilePath: WebApp.Dockerfile
+          appSourcePath: ${{ github.workspace }}
+          dockerfilePath: WebApp. Dockerfile
           registryUrl: docker.io
           registryUsername: ${{ secrets.DOCKERHUB_USERNAME }}
-          registryPassword: ${{ secrets. DOCKERHUB_TOKEN }}
+          registryPassword: ${{ secrets.DOCKERHUB_TOKEN }}
           containerAppName: ca-mw10-globaluitest
           resourceGroup: RG-AI-Regent-DEV
-          imageToBuild: docker.io/dawgone/globalevo:${{ github.sha }}
+          imageToBuild: docker.io/dawgone/globalevo: ${{ github.sha }}
           targetPort: 80
