@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 env:
-  ACR_LOGIN_SERVER: regentdockerregistry.azurecr.io    
-  IMAGE_NAME: air-gevo-regent-ui-azure              
+  ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+  IMAGE_NAME: ${{ vars.IMAGE_NAME }}
 
 jobs:
   build-and-push:
