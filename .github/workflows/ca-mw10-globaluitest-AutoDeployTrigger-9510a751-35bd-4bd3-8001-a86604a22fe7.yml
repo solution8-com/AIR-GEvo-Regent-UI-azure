@@ -35,11 +35,11 @@ jobs:
         uses: azure/container-apps-deploy-action@v2
         with:
           appSourcePath: ${{ github.workspace }}
-          dockerfilePath: WebApp. Dockerfile
+          dockerfilePath: WebApp.Dockerfile
           registryUrl: docker.io
           registryUsername: ${{ secrets.DOCKERHUB_USERNAME }}
           registryPassword: ${{ secrets.DOCKERHUB_TOKEN }}
           containerAppName: ca-mw10-globaluitest
           resourceGroup: RG-AI-Regent-DEV
-          imageToBuild: docker.io/dawgone/globalevo: ${{ github.sha }}
+          imageToBuild: docker.io/dawgone/globalevo:${{ github.sha }}
           targetPort: 80
