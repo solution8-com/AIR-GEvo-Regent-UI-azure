@@ -10,11 +10,17 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-push:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - name: Extract metadata
+        id: meta
+        run: |
+          echo "SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+          echo "TIMESTAMP=$(date -u +'%Y%m%d_%H%M%S')" >> $GITHUB_OUTPUT
 
       - name: Log in to Docker Hub
         if: github.event_name != 'pull_request'
@@ -23,18 +29,16 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build Docker image
         run: |
-          IMAGE_BASE=docker.io/dawgone/air-gevo-regent-ui
-          TAG_DATE=${IMAGE_BASE}:$(date +'%Y-%m-%d')_${GITHUB_RUN_NUMBER}
-          TAG_LATEST=${IMAGE_BASE}:latest
+          docker build . --file WebApp.Dockerfile \
+            --tag docker.io/dawgone/air-gevo-regent-ui-azure:latest \
+            --tag docker.io/dawgone/air-gevo-regent-ui-azure:${{ steps.meta.outputs.SHORT_SHA }} \
+            --tag docker.io/dawgone/air-gevo-regent-ui-azure:${{ steps.meta.outputs.TIMESTAMP }}
 
-          docker build . \
-            --file WebApp.Dockerfile \
-            --tag $TAG_DATE
-
-          if [ "${{ github.event_name }}" != "pull_request" ]; then
-            docker tag $TAG_DATE $TAG_LATEST
-            docker push $TAG_DATE
-            docker push $TAG_LATEST
-          fi
+      - name: Push Docker image
+        if: github.event_name != 'pull_request'
+        run: |
+          docker push docker.io/dawgone/air-gevo-regent-ui-azure:latest
+          docker push docker.io/dawgone/air-gevo-regent-ui-azure:${{ steps.meta.outputs.SHORT_SHA }}
+          docker push docker.io/dawgone/air-gevo-regent-ui-azure:${{ steps.meta.outputs.TIMESTAMP }}
