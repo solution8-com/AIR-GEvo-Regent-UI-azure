@@ -356,7 +356,7 @@ const Chat = () => {
         let errorChatMsg: ChatMessage = {
           id: uuid(),
           role: ERROR,
-          content: `There was an error generating a response. Chat history can't be saved at this time. ${errorResponseMessage}`,
+          content: `There was an error generating a response. Chat history can't be saved at this time. This does _NOT_ directly imply the DB can't be reached. ${errorResponseMessage}`,
           date: new Date().toISOString()
         }
         let resultConversation
