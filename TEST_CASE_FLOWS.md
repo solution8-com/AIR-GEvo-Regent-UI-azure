@@ -2,7 +2,37 @@
 Below are some flows to follow to make sure code changes are tested effectivly and efficiently. 
 The goal is to make sure that this is repeatable and can be done by anyone to avoid regressions.
 
-## Test Case Flows
+## Test Case Flows for n8n(data backend) + Azure App Service
+n8n with ...
+### streaming, Chat History
+
+`AZURE_OPENAI_STREAM` should be set to `true`\
+`AZURE_COSMOSDB_DATABASE`\
+`AZURE_COSMOSDB_ACCOUNT`\
+`AZURE_COSMOSDB_CONVERSATIONS_CONTAINER`\
+
+### non streaming, Chat History
+
+`AZURE_OPENAI_STREAM` should be set to `false`\
+`AZURE_COSMOSDB_DATABASE`\
+`AZURE_COSMOSDB_ACCOUNT`\
+`AZURE_COSMOSDB_CONVERSATIONS_CONTAINER`\
+
+### streaming, without Chat History
+
+`AZURE_OPENAI_STREAM` should be set to `true`\
+`AZURE_COSMOSDB_CONVERSATIONS_CONTAINER` should be `null`\
+
+### non streaming, without Chat History
+
+`AZURE_OPENAI_STREAM` should be set to `false`\
+`AZURE_COSMOSDB_CONVERSATIONS_CONTAINER` should be `null`\
+
+The following environment variables should **not** be set:
+
+`AZURE_COSMOSDB_CONVERSATIONS_CONTAINER`
+
+## Test Case Flows for pure Azure deployments
 - with data, streaming
 - with data, non streaming
 - without data, streaming
