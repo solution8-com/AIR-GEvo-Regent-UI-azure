@@ -31,16 +31,16 @@ param openAiResourceName string = ''
 param openAiResourceGroupName string = ''
 param openAiResourceGroupLocation string = location
 param openAiSkuName string = ''
-param openAIModel string = 'turbo16k'
-param openAIModelName string = 'gpt-35-turbo-16k'
-param openAITemperature int = 0
+param openAIModel string = '5mini'
+param openAIModelName string = 'gpt-5-mini'
+param openAITemperature int = ''
 param openAITopP int = 1
-param openAIMaxTokens int = 1000
+param openAIMaxTokens int = 3000
 param openAIStopSequence string = ''
 param openAISystemMessage string = 'You are an AI assistant that helps people find information.'
 param openAIStream bool = true
 param embeddingDeploymentName string = 'embedding'
-param embeddingModelName string = 'text-embedding-ada-002'
+param embeddingModelName string = 'text-embedding-3-large'
 
 // Used by prepdocs.py: Form recognizer
 param formRecognizerServiceName string = ''
