@@ -4,10 +4,28 @@ AZURE_OPENAI_MODEL={{ AZURE_OPENAI_MODEL }}
 {% if not USE_MI %}
 AZURE_OPENAI_KEY={{ AZURE_OPENAI_KEY }}
 {% endif %}
-AZURE_OPENAI_TEMPERATURE=0
-AZURE_OPENAI_TOP_P=1.0
-AZURE_OPENAI_MAX_TOKENS=1000
-AZURE_OPENAI_STOP_SEQUENCE=
+
+{% set TEMP_DEFAULT = 0.7 %}
+{% set TOP_P_DEFAULT = 0.9 %}
+
+{% set temp_provided = AZURE_OPENAI_TEMPERATURE is defined and (AZURE_OPENAI_TEMPERATURE ~ '')|trim != '' %}
+{% set top_p_provided = AZURE_OPENAI_TOP_P is defined and (AZURE_OPENAI_TOP_P ~ '')|trim != '' %}
+
+{% if temp_provided and top_p_provided %}
+# ERROR: Don’t set both AZURE_OPENAI_TEMPERATURE and AZURE_OPENAI_TOP_P. top_p computes the cumulative probability distribution, and cut off as soon as that distribution exceeds the value of top_p. For example, a top_p of 0.3 means that only the tokens comprising the top 30% probability mass are considered.
+{% endif %}
+
+{% set temperature = ((AZURE_OPENAI_TEMPERATURE ~ '')|trim if temp_provided else TEMP_DEFAULT) %}
+{% set top_p       = ((AZURE_OPENAI_TOP_P ~ '')|trim       if top_p_provided else TOP_P_DEFAULT) %}
+
+AZURE_OPENAI_TEMPERATURE={{ temperature }}
+AZURE_OPENAI_TOP_P={{ top_p }}
+
+{% if "gpt-4" in AZURE_OPENAI_MODEL or "gpt-4o" in AZURE_OPENAI_MODEL or "gpt-4.1" or "gpt-4.5" in AZURE_OPENAI_MODEL %}
+OPENAI_MAX_TOKENS={{ MAX_TOKENS }}
+{% else %}
+OPENAI_MAX_COMPLETION_TOKENS={{ MAX_COMPLETION_TOKENS }}
+{% endif %}AZURE_OPENAI_STOP_SEQUENCE=
 AZURE_OPENAI_SYSTEM_MESSAGE=You are an AI assistant that helps people find information.
 AZURE_OPENAI_PREVIEW_API_VERSION=2024-05-01-preview
 AZURE_OPENAI_STREAM={{ AZURE_OPENAI_STREAM }}
@@ -26,6 +44,10 @@ AZURE_COSMOSDB_DATABASE={{ AZURE_COSMOSDB_DATABASE }}
 AZURE_COSMOSDB_CONVERSATIONS_CONTAINER={{ AZURE_COSMOSDB_CONVERSATIONS_CONTAINER }}
 AZURE_COSMOSDB_ACCOUNT_KEY={{ AZURE_COSMOSDB_ACCOUNT_KEY }}
 AZURE_COSMOSDB_ENABLE_FEEDBACK={{ AZURE_COSMOSDB_ENABLE_FEEDBACK }}
+{% endif %}
+{% if DATASOURCE_TYPE == "n8n" %}
+N8N_WEBHOOK_URL={{ N8N_WEBHOOK_URL }}
+N8N_BEARER_TOKEN={{ N8N_BEARER_TOKEN }}
 {% endif %}
 {% if DATASOURCE_TYPE == "AzureCognitiveSearch" %}
 AZURE_SEARCH_SERVICE={{ AZURE_SEARCH_SERVICE }}
