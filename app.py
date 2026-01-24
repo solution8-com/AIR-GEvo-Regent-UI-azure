@@ -248,6 +248,10 @@ async def init_cosmosdb_client():
 
 
 def prepare_model_args(request_body, request_headers):
+    # This function should only be called when using Azure OpenAI provider
+    if not app_settings.azure_openai:
+        raise ValueError("Azure OpenAI settings are required for prepare_model_args")
+    
     request_messages = request_body.get("messages", [])
     messages = []
     if not app_settings.datasource:
@@ -545,7 +549,7 @@ async def stream_chat_request(request_body, request_headers):
     history_metadata = request_body.get("history_metadata", {})
     
     async def generate(apim_request_id, history_metadata):
-        if app_settings.azure_openai.function_call_azure_functions_enabled:
+        if app_settings.azure_openai and app_settings.azure_openai.function_call_azure_functions_enabled:
             # Maintain state during function call streaming
             function_call_stream_state = AzureOpenaiFunctionCallStreamState()
             
@@ -573,7 +577,7 @@ async def stream_chat_request(request_body, request_headers):
 
 async def conversation_internal(request_body, request_headers):
     try:
-        if app_settings.azure_openai.stream and not app_settings.base_settings.use_promptflow:
+        if app_settings.azure_openai and app_settings.azure_openai.stream and not app_settings.base_settings.use_promptflow:
             result = await stream_chat_request(request_body, request_headers)
             response = await make_response(format_as_ndjson(result))
             response.timeout = None
