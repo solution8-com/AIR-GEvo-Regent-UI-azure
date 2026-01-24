@@ -81,10 +81,10 @@ Respond to Webhook Node (return response)
 
 ```bash
 export N8N_WEBHOOK_URL="https://your-n8n-instance.com/webhook/test-webhook-id"
-export N8N_BEARER_TOKEN="N8N_BEARER_TOKEN__REPLACE_ME"
+export N8N_BEARER_TOKEN="your-bearer-token-here"
 ```
 
-**Note:** Replace `N8N_BEARER_TOKEN__REPLACE_ME` with your actual n8n bearer token.
+**Note:** Replace `your-bearer-token-here` with your actual n8n bearer token.
 
 ### Running Tests
 

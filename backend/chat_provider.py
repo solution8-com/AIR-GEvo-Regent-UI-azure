@@ -197,9 +197,11 @@ class N8nChatProvider(ChatProvider):
             # Text field
             if "text" in n8n_response:
                 return str(n8n_response["text"])
-            # If it's a simple dict with one key, use that value
+            # If it's a simple dict with one key, use that value if not None
             if len(n8n_response) == 1:
-                return str(list(n8n_response.values())[0])
+                value = list(n8n_response.values())[0]
+                if value is not None:
+                    return str(value)
         
         # Fallback: return the entire response as JSON string
         return json.dumps(n8n_response)
@@ -405,7 +407,7 @@ def create_chat_provider() -> Optional[ChatProvider]:
     n8n_bearer_token = app_settings.base_settings.n8n_bearer_token
     
     if n8n_webhook_url and n8n_bearer_token:
-        timeout_ms = getattr(app_settings.base_settings, 'n8n_timeout_ms', 120000)
+        timeout_ms = app_settings.base_settings.n8n_timeout_ms
         logging.info("Creating n8n chat provider")
         return N8nChatProvider(
             webhook_url=n8n_webhook_url,

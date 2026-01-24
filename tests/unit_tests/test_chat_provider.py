@@ -1,5 +1,6 @@
 """Unit tests for chat provider functionality."""
 
+import httpx
 import pytest
 from unittest.mock import AsyncMock, Mock, patch
 from backend.chat_provider import (
@@ -227,8 +228,6 @@ class TestN8nChatProvider:
     @pytest.mark.asyncio
     async def test_send_message_with_http_error(self):
         """Test error handling when n8n webhook fails."""
-        import httpx
-        
         provider = N8nChatProvider(
             webhook_url="https://example.com/webhook",
             bearer_token="test-token"
