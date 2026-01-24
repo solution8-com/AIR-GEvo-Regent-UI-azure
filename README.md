@@ -332,6 +332,8 @@ Note: RBAC assignments can take a few minutes before becoming effective.
 
 #### Chat with your data using Promptflow
 
+Promptflow is enabled independently of `DATASOURCE_TYPE`. Set `USE_PROMPTFLOW=True` to route requests to the Promptflow endpoint; `DATASOURCE_TYPE` remains reserved for grounding data sources like Azure Search, Elasticsearch, etc.
+
 Configure your settings using the table below.
 
 | App Setting | Required? | Default Value | Note |
