@@ -101,7 +101,7 @@ class _AzureOpenAISettings(BaseSettings):
         env_ignore_empty=True
     )
     
-    model: str
+    model: Optional[str] = None
     key: Optional[str] = None
     resource: Optional[str] = None
     endpoint: Optional[str] = None
@@ -165,6 +165,12 @@ class _AzureOpenAISettings(BaseSettings):
     
     @model_validator(mode="after")
     def ensure_endpoint(self) -> Self:
+        # Skip validation if using n8n as chat provider
+        import os
+        chat_provider = os.environ.get("CHAT_PROVIDER", "aoai")
+        if chat_provider == "n8n":
+            return self
+            
         if self.endpoint:
             return self
         
