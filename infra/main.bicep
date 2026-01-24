@@ -66,6 +66,22 @@ var abbrs = loadJsonContent('abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var tags = { 'azd-env-name': environmentName }
 var deploySearchResources = toLower(datasourceType) != 'n8n'
+var datasourceAppSettings = !empty(datasourceType) ? {
+  DATASOURCE_TYPE: datasourceType
+} : {}
+var searchAppSettings = deploySearchResources ? {
+  AZURE_SEARCH_INDEX: searchIndexName
+  AZURE_SEARCH_SERVICE: searchService.outputs.name
+  AZURE_SEARCH_KEY: searchService.outputs.adminKey
+  AZURE_SEARCH_USE_SEMANTIC_SEARCH: searchUseSemanticSearch
+  AZURE_SEARCH_SEMANTIC_SEARCH_CONFIG: searchSemanticSearchConfig
+  AZURE_SEARCH_TOP_K: searchTopK
+  AZURE_SEARCH_ENABLE_IN_DOMAIN: searchEnableInDomain
+  AZURE_SEARCH_CONTENT_COLUMNS: searchContentColumns
+  AZURE_SEARCH_FILENAME_COLUMN: searchFilenameColumn
+  AZURE_SEARCH_TITLE_COLUMN: searchTitleColumn
+  AZURE_SEARCH_URL_COLUMN: searchUrlColumn
+} : {}
 
 // Organize resources in a resource group
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
@@ -117,20 +133,7 @@ module backend 'core/host/appservice.bicep' = {
     authClientSecret: authClientSecret
     authClientId: authClientId
     authIssuerUri: authIssuerUri
-    appSettings: {
-      DATASOURCE_TYPE: datasourceType
-      // search
-      AZURE_SEARCH_INDEX: deploySearchResources ? searchIndexName : ''
-      AZURE_SEARCH_SERVICE: deploySearchResources ? searchService.outputs.name : ''
-      AZURE_SEARCH_KEY: deploySearchResources ? searchService.outputs.adminKey : ''
-      AZURE_SEARCH_USE_SEMANTIC_SEARCH: deploySearchResources ? searchUseSemanticSearch : false
-      AZURE_SEARCH_SEMANTIC_SEARCH_CONFIG: deploySearchResources ? searchSemanticSearchConfig : ''
-      AZURE_SEARCH_TOP_K: deploySearchResources ? searchTopK : 0
-      AZURE_SEARCH_ENABLE_IN_DOMAIN: deploySearchResources ? searchEnableInDomain : false
-      AZURE_SEARCH_CONTENT_COLUMNS: deploySearchResources ? searchContentColumns : ''
-      AZURE_SEARCH_FILENAME_COLUMN: deploySearchResources ? searchFilenameColumn : ''
-      AZURE_SEARCH_TITLE_COLUMN: deploySearchResources ? searchTitleColumn : ''
-      AZURE_SEARCH_URL_COLUMN: deploySearchResources ? searchUrlColumn : ''
+    appSettings: union(datasourceAppSettings, searchAppSettings, {
       // openai
       AZURE_OPENAI_RESOURCE: openAi.outputs.name
       AZURE_OPENAI_MODEL: openAIModel
@@ -142,7 +145,7 @@ module backend 'core/host/appservice.bicep' = {
       AZURE_OPENAI_STOP_SEQUENCE: openAIStopSequence
       AZURE_OPENAI_SYSTEM_MESSAGE: openAISystemMessage
       AZURE_OPENAI_STREAM: openAIStream
-    }
+    })
   }
 }
 
