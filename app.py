@@ -4,6 +4,7 @@ import os
 import logging
 import uuid
 import httpx
+import time
 import asyncio
 from quart import (
     Blueprint,
@@ -113,6 +114,113 @@ MS_DEFENDER_ENABLED = os.environ.get("MS_DEFENDER_ENABLED", "true").lower() == "
 
 azure_openai_tools = []
 azure_openai_available_tools = []
+
+def _get_chat_provider() -> str:
+    return (app_settings.base_settings.chat_provider or "aoai").lower()
+
+def _get_n8n_session_id(request_body, request_headers) -> str:
+    history_metadata = request_body.get("history_metadata", {}) or {}
+    conversation_id = history_metadata.get("conversation_id") or request_body.get("conversation_id")
+    if conversation_id:
+        return conversation_id
+    messages = request_body.get("messages", [])
+    for message in messages:
+        if message.get("role") == "user" and message.get("id"):
+            return message["id"]
+    return str(uuid.uuid4())
+
+def _get_n8n_chat_input(request_body) -> str:
+    messages = request_body.get("messages", [])
+    for message in reversed(messages):
+        if message.get("role") == "user":
+            content = message.get("content", "")
+            if isinstance(content, list):
+                return next(
+                    (item.get("text", "") for item in content if isinstance(item, dict) and item.get("type") == "text"),
+                    "",
+                )
+            return content
+    return ""
+
+def _extract_n8n_output(payload) -> str:
+    if payload is None:
+        return ""
+    if isinstance(payload, list) and payload:
+        return _extract_n8n_output(payload[0])
+    if isinstance(payload, dict):
+        if "json" in payload:
+            return _extract_n8n_output(payload.get("json"))
+        for key in ("output", "answer", "response", "text", "content", "message"):
+            value = payload.get(key)
+            if isinstance(value, str):
+                return value
+        for key in ("data", "result"):
+            if key in payload:
+                return _extract_n8n_output(payload[key])
+    if isinstance(payload, str):
+        return payload
+    return ""
+
+def _format_n8n_response(message, history_metadata, response_id, created_ts, is_streaming):
+    return {
+        "id": response_id,
+        "model": "n8n",
+        "created": created_ts,
+        "object": "chat.completion.chunk" if is_streaming else "chat.completion",
+        "choices": [{"messages": [{"role": "assistant", "content": message}]}],
+        "history_metadata": history_metadata,
+        "apim-request-id": None,
+    }
+
+async def _send_n8n_request(chat_input, session_id, timeout_ms, client=None):
+    if not app_settings.n8n or not app_settings.n8n.webhook_url:
+        raise ValueError("N8N_WEBHOOK_URL is required when CHAT_PROVIDER=n8n")
+    if not app_settings.n8n.bearer_token:
+        raise ValueError("N8N_BEARER_TOKEN is required when CHAT_PROVIDER=n8n")
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": f"Bearer {app_settings.n8n.bearer_token}",
+    }
+    payload = {"chatInput": chat_input, "sessionId": session_id}
+    if client:
+        return await client.post(app_settings.n8n.webhook_url, json=payload, headers=headers)
+    async with httpx.AsyncClient(timeout=float(timeout_ms) / 1000) as http_client:
+        return await http_client.post(app_settings.n8n.webhook_url, json=payload, headers=headers)
+
+async def _complete_n8n_request(request_body, request_headers):
+    history_metadata = request_body.get("history_metadata", {})
+    session_id = _get_n8n_session_id(request_body, request_headers)
+    chat_input = _get_n8n_chat_input(request_body)
+    response_id = str(uuid.uuid4())
+    created_ts = int(time.time())
+    try:
+        timeout_ms = app_settings.n8n.timeout_ms if app_settings.n8n else 15000
+        response = await _send_n8n_request(chat_input, session_id, timeout_ms)
+        response.raise_for_status()
+        payload = response.json()
+        message = _extract_n8n_output(payload)
+        if not message:
+            raise ValueError("No assistant response returned from n8n")
+        return _format_n8n_response(message, history_metadata, response_id, created_ts, False)
+    except Exception as exc:
+        logging.exception("Exception in n8n request")
+        error_message = "There was an error contacting the n8n service. Please try again."
+        if isinstance(exc, ValueError):
+            error_message = str(exc)
+        return _format_n8n_response(error_message, history_metadata, response_id, created_ts, False)
+
+async def _stream_n8n_request(request_body, request_headers):
+    history_metadata = request_body.get("history_metadata", {})
+    response_id = str(uuid.uuid4())
+    created_ts = int(time.time())
+    async def generate():
+        result = await _complete_n8n_request(request_body, request_headers)
+        result["object"] = "chat.completion.chunk"
+        result["id"] = response_id
+        result["created"] = created_ts
+        yield result
+    return generate()
 
 # Initialize Azure OpenAI Client
 async def init_openai_client():
@@ -564,6 +672,15 @@ async def stream_chat_request(request_body, request_headers):
 
 async def conversation_internal(request_body, request_headers):
     try:
+        if _get_chat_provider() == "n8n":
+            if app_settings.azure_openai.stream:
+                result = await _stream_n8n_request(request_body, request_headers)
+                response = await make_response(format_as_ndjson(result))
+                response.timeout = None
+                response.mimetype = "application/json-lines"
+                return response
+            result = await _complete_n8n_request(request_body, request_headers)
+            return jsonify(result)
         if app_settings.azure_openai.stream and not app_settings.base_settings.use_promptflow:
             result = await stream_chat_request(request_body, request_headers)
             response = await make_response(format_as_ndjson(result))

@@ -82,6 +82,18 @@ class _PromptflowSettings(BaseSettings):
     citations_field_name: str = "documents"
 
 
+class _N8nSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="N8N_",
+        env_file=DOTENV_PATH,
+        extra="ignore",
+        env_ignore_empty=True
+    )
+    webhook_url: Optional[str] = None
+    bearer_token: Optional[str] = None
+    timeout_ms: int = 15000
+
+
 class _AzureOpenAIFunction(BaseModel):
     name: str = Field(..., min_length=1)
     description: str = Field(..., min_length=1)
@@ -761,6 +773,7 @@ class _BaseSettings(BaseSettings):
     auth_enabled: bool = True
     sanitize_answer: bool = False
     use_promptflow: bool = False
+    chat_provider: str = Field(default="aoai", validation_alias="CHAT_PROVIDER")
 
 
 class _AppSettings(BaseModel):
@@ -773,6 +786,7 @@ class _AppSettings(BaseModel):
     chat_history: Optional[_ChatHistorySettings] = None
     datasource: Optional[DatasourcePayloadConstructor] = None
     promptflow: Optional[_PromptflowSettings] = None
+    n8n: Optional[_N8nSettings] = None
 
     @model_validator(mode="after")
     def set_promptflow_settings(self) -> Self:
@@ -792,6 +806,14 @@ class _AppSettings(BaseModel):
         except ValidationError:
             self.chat_history = None
         
+        return self
+
+    @model_validator(mode="after")
+    def set_n8n_settings(self) -> Self:
+        try:
+            self.n8n = _N8nSettings()
+        except ValidationError:
+            self.n8n = None
         return self
     
     @model_validator(mode="after")
