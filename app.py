@@ -35,6 +35,7 @@ from backend.utils import (
     convert_to_pf_format,
     format_pf_non_streaming_response,
 )
+from backend.chat_provider import create_chat_provider
 
 bp = Blueprint("routes", __name__, static_folder="static", template_folder="static")
 
@@ -564,6 +565,12 @@ async def stream_chat_request(request_body, request_headers):
 
 async def conversation_internal(request_body, request_headers):
     try:
+        # Check if n8n provider is configured and enabled
+        if app_settings.base_settings.chat_provider == "n8n":
+            # Use n8n chat provider
+            return await conversation_internal_n8n(request_body, request_headers)
+        
+        # Default: Use Azure OpenAI (existing behavior)
         if app_settings.azure_openai.stream and not app_settings.base_settings.use_promptflow:
             result = await stream_chat_request(request_body, request_headers)
             response = await make_response(format_as_ndjson(result))
@@ -576,6 +583,61 @@ async def conversation_internal(request_body, request_headers):
 
     except Exception as ex:
         logging.exception(ex)
+        if hasattr(ex, "status_code"):
+            return jsonify({"error": str(ex)}), ex.status_code
+        else:
+            return jsonify({"error": str(ex)}), 500
+
+
+async def conversation_internal_n8n(request_body, request_headers):
+    """
+    Handle conversation using n8n chat provider.
+    Maintains the same response format as AOAI for frontend compatibility.
+    """
+    try:
+        # Get authenticated user details (Entra ID authentication still required)
+        authenticated_user = get_authenticated_user_details(request_headers)
+        user_id = authenticated_user["user_principal_id"]
+        
+        # Create n8n chat provider
+        n8n_provider = create_chat_provider()
+        if n8n_provider is None:
+            return jsonify({"error": "n8n chat provider is not configured"}), 500
+        
+        # Extract messages and history metadata
+        messages = request_body.get("messages", [])
+        history_metadata = request_body.get("history_metadata", {})
+        
+        # Check if streaming is enabled (we'll simulate streaming with n8n)
+        use_streaming = app_settings.azure_openai.stream
+        
+        if use_streaming:
+            # Stream response (n8n returns single chunk but we wrap it in streaming format)
+            async def generate():
+                async for chunk in n8n_provider.send_message(
+                    messages=messages,
+                    request_headers=request_headers,
+                    history_metadata=history_metadata,
+                    user_id=user_id
+                ):
+                    yield chunk
+            
+            response = await make_response(format_as_ndjson(generate()))
+            response.timeout = None
+            response.mimetype = "application/json-lines"
+            return response
+        else:
+            # Non-streaming response
+            result = await n8n_provider.send_message_non_streaming(
+                messages=messages,
+                request_headers=request_headers,
+                history_metadata=history_metadata,
+                user_id=user_id
+            )
+            return jsonify(result)
+    
+    except Exception as ex:
+        logging.exception("Exception in n8n conversation handler")
         if hasattr(ex, "status_code"):
             return jsonify({"error": str(ex)}), ex.status_code
         else:

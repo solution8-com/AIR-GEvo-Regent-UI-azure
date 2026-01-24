@@ -761,6 +761,11 @@ class _BaseSettings(BaseSettings):
     auth_enabled: bool = True
     sanitize_answer: bool = False
     use_promptflow: bool = False
+    # Chat provider settings
+    chat_provider: Literal["aoai", "n8n"] = "aoai"
+    n8n_webhook_url: Optional[str] = None
+    n8n_bearer_token: Optional[str] = None
+    n8n_timeout_ms: int = 120000
 
 
 class _AppSettings(BaseModel):

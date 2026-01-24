@@ -161,13 +161,44 @@ Note: RBAC assignments can take a few minutes before becoming effective.
 
 #### Chat with your data
 
-#### Chat with your data using n8n backend (<SECTION NEEDS HEPL>)
+#### Chat with your data using n8n backend
 
-1. Configure data source settings as described in the table below.
+The application supports using an n8n workflow as an alternate chat backend. This allows you to integrate custom RAG pipelines, AI agents, or other n8n-based chat workflows while maintaining the existing UI and Microsoft Entra ID authentication.
+
+1. Configure the chat provider and n8n settings as described in the table below.
 
     | App Setting | Required? | Default Value | Note |
     | --- | --- | --- | ------------- |
-    |DATASOURCE_TYPE|Yes||Must be set to `n8n`|
+    |CHAT_PROVIDER|Yes|aoai|Set to `n8n` to enable n8n backend (default: `aoai` for Azure OpenAI)|
+    |N8N_WEBHOOK_URL|Yes (when CHAT_PROVIDER=n8n)||Full n8n webhook endpoint URL (e.g., `https://your-n8n.com/webhook/...`)|
+    |N8N_BEARER_TOKEN|Yes (when CHAT_PROVIDER=n8n)||Bearer token for n8n webhook authentication. **Must be kept secret and stored server-side only**.|
+    |N8N_TIMEOUT_MS|No|120000|Request timeout in milliseconds (default: 2 minutes)|
+
+2. Your n8n workflow must accept POST requests with this JSON structure:
+    ```json
+    {
+      "chatInput": "User message text",
+      "sessionId": "Unique session identifier"
+    }
+    ```
+
+3. The workflow must return a JSON response containing the assistant message. Supported response fields: `message`, `output`, `response`, or `text`.
+
+4. **Important:** Microsoft Entra ID authentication remains mandatory. The n8n webhook is called server-to-server only. The bearer token is never exposed to the browser.
+
+5. **Session Management:** The backend automatically manages `sessionId` for conversation continuity. Same conversation uses same sessionId; new chat gets new sessionId.
+
+6. For detailed setup instructions, testing, and troubleshooting, see [`next-steps.md`](./next-steps.md).
+
+#### Example n8n Workflow Requirements
+
+Your n8n workflow should follow this general structure:
+- **Webhook Node**: Accepts POST requests with authentication
+- **Edit Fields Node**: Extracts `chatInput` and `sessionId` from the request
+- **Chat/RAG Node**: Processes the message (can include memory, RAG, or AI agent logic)
+- **Respond to Webhook Node**: Returns the response
+
+The workflow can include memory components (e.g., Postgres Chat Memory) that use `sessionId` to maintain conversation context across turns.
 
 #### Chat with your data using Azure Cognitive Search
 
