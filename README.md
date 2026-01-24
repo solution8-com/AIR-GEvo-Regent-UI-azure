@@ -159,7 +159,13 @@ Note: RBAC assignments can take a few minutes before becoming effective.
 
 #### Chat with your data
 
-[More information about Azure OpenAI on your data](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/concepts/use-your-data)
+#### Chat with your data using n8n backend (<SECTION NEEDS HEPL>)
+
+1. Configure data source settings as described in the table below.
+
+    | App Setting | Required? | Default Value | Note |
+    | --- | --- | --- | ------------- |
+    |DATASOURCE_TYPE|Yes||Must be set to `n8n`|
 
 #### Chat with your data using Azure Cognitive Search
 
