@@ -118,6 +118,15 @@ azure_openai_available_tools = []
 async def init_openai_client():
     azure_openai_client = None
     
+    # Only initialize Azure OpenAI client if needed
+    if not app_settings.azure_openai:
+        logging.info(f"Skipping Azure OpenAI client initialization (CHAT_PROVIDER={app_settings.base_settings.chat_provider}, no Azure OpenAI settings)")
+        return None
+    
+    if app_settings.base_settings.chat_provider == "n8n" and not app_settings.datasource:
+        logging.info(f"Skipping Azure OpenAI client initialization (CHAT_PROVIDER={app_settings.base_settings.chat_provider}, no datasource requiring embeddings)")
+        return None
+    
     try:
         # API version check
         if (
@@ -191,7 +200,7 @@ async def init_openai_client():
         raise e
 
 async def openai_remote_azure_function_call(function_name, function_args):
-    if app_settings.azure_openai.function_call_azure_functions_enabled is not True:
+    if not app_settings.azure_openai or app_settings.azure_openai.function_call_azure_functions_enabled is not True:
         return
 
     azure_functions_tool_url = f"{app_settings.azure_openai.function_call_azure_functions_tool_base_url}?code={app_settings.azure_openai.function_call_azure_functions_tool_key}"

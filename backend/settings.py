@@ -164,14 +164,21 @@ class _AzureOpenAISettings(BaseSettings):
     
     @model_validator(mode="after")
     def ensure_endpoint(self) -> "_AzureOpenAISettings":
-        if self.endpoint:
+        """Only require endpoint/resource if this instance will actually be used."""
+        # Note: This validator cannot access app_settings.base_settings.chat_provider
+        # because _AzureOpenAISettings is instantiated before _AppSettings validation runs.
+        # The actual provider check happens in _AppSettings.set_azure_openai_settings()
+        
+        # If both endpoint and resource are missing, we'll validate later based on provider
+        if not self.endpoint and not self.resource:
+            # Don't fail here - let _AppSettings validate based on chat_provider
             return self
         
-        elif self.resource:
+        # If resource is provided but endpoint is not, construct endpoint
+        if self.resource and not self.endpoint:
             object.__setattr__(self, "endpoint", f"https://{self.resource}.openai.azure.com")
-            return self
         
-        raise ValueError("AZURE_OPENAI_ENDPOINT or AZURE_OPENAI_RESOURCE is required")
+        return self
         
     def extract_embedding_dependency(self) -> Optional[dict]:
         if self.embedding_name:
@@ -344,8 +351,11 @@ class _AzureSearchSettings(BaseSettings, DatasourcePayloadConstructor):
         if request and self.permitted_groups_column:
             self.filter = self._set_filter_string(request)
             
-        self.embedding_dependency = \
+        self.embedding_dependency = (
             self._settings.azure_openai.extract_embedding_dependency()
+            if self._settings.azure_openai
+            else None
+        )
         parameters = self.model_dump(exclude_none=True, by_alias=True)
         parameters.update(self._settings.search.model_dump(exclude_none=True, by_alias=True))
         
@@ -417,8 +427,11 @@ class _AzureCosmosDbMongoVcoreSettings(
         *args,
         **kwargs
     ):
-        self.embedding_dependency = \
+        self.embedding_dependency = (
             self._settings.azure_openai.extract_embedding_dependency()
+            if self._settings.azure_openai
+            else None
+        )
         parameters = self.model_dump(exclude_none=True, by_alias=True)
         parameters.update(self._settings.search.model_dump(exclude_none=True, by_alias=True))
         return {
@@ -487,9 +500,10 @@ class _ElasticsearchSettings(BaseSettings, DatasourcePayloadConstructor):
         *args,
         **kwargs
     ):
-        self.embedding_dependency = \
-            {"type": "model_id", "model_id": self.embedding_model_id} if self.embedding_model_id else \
-            self._settings.azure_openai.extract_embedding_dependency() 
+        self.embedding_dependency = (
+            {"type": "model_id", "model_id": self.embedding_model_id} if self.embedding_model_id else
+            (self._settings.azure_openai.extract_embedding_dependency() if self._settings.azure_openai else None)
+        )
             
         parameters = self.model_dump(exclude_none=True, by_alias=True)
         parameters.update(self._settings.search.model_dump(exclude_none=True, by_alias=True))
@@ -559,8 +573,11 @@ class _PineconeSettings(BaseSettings, DatasourcePayloadConstructor):
         *args,
         **kwargs
     ):
-        self.embedding_dependency = \
+        self.embedding_dependency = (
             self._settings.azure_openai.extract_embedding_dependency()
+            if self._settings.azure_openai
+            else None
+        )
         parameters = self.model_dump(exclude_none=True, by_alias=True)
         parameters.update(self._settings.search.model_dump(exclude_none=True, by_alias=True))
         
@@ -738,8 +755,11 @@ class _MongoDbSettings(BaseSettings, DatasourcePayloadConstructor):
         *args,
         **kwargs
     ):
-        self.embedding_dependency = \
+        self.embedding_dependency = (
             self._settings.azure_openai.extract_embedding_dependency()
+            if self._settings.azure_openai
+            else None
+        )
             
         parameters = self.model_dump(exclude_none=True, by_alias=True)
         parameters.update(self._settings.search.model_dump(exclude_none=True, by_alias=True))
@@ -778,7 +798,7 @@ class _BaseSettings(BaseSettings):
 
 class _AppSettings(BaseModel):
     base_settings: _BaseSettings = _BaseSettings()
-    azure_openai: _AzureOpenAISettings = _AzureOpenAISettings()
+    azure_openai: Optional[_AzureOpenAISettings] = None
     search: _SearchCommonSettings = _SearchCommonSettings()
     ui: Optional[_UiSettings] = _UiSettings()
     
@@ -787,6 +807,57 @@ class _AppSettings(BaseModel):
     datasource: Optional[DatasourcePayloadConstructor] = None
     promptflow: Optional[_PromptflowSettings] = None
     n8n: Optional[_N8NSettings] = None
+
+    @model_validator(mode="after")
+    def set_azure_openai_settings(self) -> "_AppSettings":
+        """Only instantiate Azure OpenAI settings when required by the chat provider."""
+        try:
+            candidate_settings = _AzureOpenAISettings()
+            
+            # Check if we actually need Azure OpenAI settings
+            if self.base_settings.chat_provider == "azure_openai":
+                # Azure OpenAI is the chat provider - settings are mandatory
+                if not candidate_settings.endpoint and not candidate_settings.resource:
+                    raise ValueError("AZURE_OPENAI_ENDPOINT or AZURE_OPENAI_RESOURCE is required when CHAT_PROVIDER=azure_openai")
+                object.__setattr__(self, "azure_openai", candidate_settings)
+            
+            elif self.base_settings.chat_provider == "n8n":
+                # n8n is the chat provider - Azure OpenAI only needed for embeddings
+                # Check if any datasource will need embeddings
+                needs_embeddings = (
+                    candidate_settings.embedding_name or 
+                    candidate_settings.embedding_endpoint or
+                    (self.base_settings.datasource_type and 
+                     self.base_settings.datasource_type != "none")
+                )
+                
+                if needs_embeddings:
+                    # Datasource needs embeddings, validate settings
+                    object.__setattr__(self, "azure_openai", candidate_settings)
+                else:
+                    # n8n handles everything, Azure OpenAI not needed
+                    object.__setattr__(self, "azure_openai", None)
+            
+            return self
+            
+        except ValidationError:
+            if self.base_settings.chat_provider == "azure_openai":
+                raise ValueError("Azure OpenAI settings are required when CHAT_PROVIDER=azure_openai")
+            # For n8n provider, Azure OpenAI settings are optional
+            object.__setattr__(self, "azure_openai", None)
+            return self
+
+    @model_validator(mode="after")
+    def set_n8n_settings(self) -> "_AppSettings":
+        """Load N8N settings when N8N is the chat provider."""
+        try:
+            n8n_settings = _N8NSettings()
+            object.__setattr__(self, "n8n", n8n_settings)
+        except ValidationError:
+            if self.base_settings.chat_provider == "n8n":
+                raise ValueError("N8N_WEBHOOK_URL and N8N_BEARER_TOKEN are required when CHAT_PROVIDER=n8n")
+            object.__setattr__(self, "n8n", None)
+        return self
 
     @model_validator(mode="after")
     def set_promptflow_settings(self) -> "_AppSettings":
