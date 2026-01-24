@@ -249,8 +249,12 @@ async def init_cosmosdb_client():
 
 def prepare_model_args(request_body, request_headers):
     # This function should only be called when using Azure OpenAI provider
+    # Caller should check app_settings.base_settings.chat_provider == "azure_openai" before calling
     if not app_settings.azure_openai:
-        raise ValueError("Azure OpenAI settings are required for prepare_model_args")
+        raise ValueError(
+            "Azure OpenAI settings are required for prepare_model_args. "
+            "This function should only be called when chat_provider is 'azure_openai'."
+        )
     
     request_messages = request_body.get("messages", [])
     messages = []

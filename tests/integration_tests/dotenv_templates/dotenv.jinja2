@@ -25,7 +25,11 @@ AZURE_OPENAI_KEY={{ AZURE_OPENAI_KEY }}
 {% endif %}
 
 {% if CHAT_PROVIDER is not defined or CHAT_PROVIDER != "n8n" or (DATASOURCE_TYPE is defined and DATASOURCE_TYPE != "none") %}
-{# Only configure Azure OpenAI settings if needed #}
+{# Only configure Azure OpenAI settings if:
+   - CHAT_PROVIDER is not set (default to azure_openai), OR
+   - CHAT_PROVIDER is azure_openai, OR  
+   - CHAT_PROVIDER is n8n BUT a datasource is configured (needs embeddings)
+#}
 {% set TEMP_DEFAULT = 0.7 %}
 {% set TOP_P_DEFAULT = 0.9 %}
 
