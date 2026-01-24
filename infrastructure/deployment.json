@@ -44,6 +44,31 @@
                 "description": "Name of Application Insights"
             }
         },
+        "DatasourceType": {
+            "type": "string",
+            "defaultValue": "AzureCognitiveSearch",
+            "allowedValues": [
+                "AzureCognitiveSearch",
+                "N8N"
+            ],
+            "metadata": {
+                "description": "Datasource type to configure app settings"
+            }
+        },
+        "N8NWebhookUrl": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Webhook URL for N8N"
+            }
+        },
+        "N8NBearerToken": {
+            "type": "securestring",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Bearer token for N8N"
+            }
+        },
         "AzureSearchService": {
             "type": "string",
             "defaultValue": "",
@@ -393,16 +418,20 @@
                             "value": "[reference(resourceId('Microsoft.Insights/components', parameters('ApplicationInsightsName')), '2015-05-01').InstrumentationKey]"
                         },
                         {
+                            "name": "DATASOURCE_TYPE",
+                            "value": "[parameters('DatasourceType')]"
+                        },
+                        {
                             "name": "AZURE_SEARCH_SERVICE",
-                            "value": "[parameters('AzureSearchService')]"
+                            "value": "[if(equals(parameters('DatasourceType'), 'N8N'), '', parameters('AzureSearchService'))]"
                         },
                         {
                             "name": "AZURE_SEARCH_INDEX",
-                            "value": "[parameters('AzureSearchIndex')]"
+                            "value": "[if(equals(parameters('DatasourceType'), 'N8N'), '', parameters('AzureSearchIndex'))]"
                         },
                         {
                             "name": "AZURE_SEARCH_KEY",
-                            "value": "[parameters('AzureSearchKey')]"
+                            "value": "[if(equals(parameters('DatasourceType'), 'N8N'), '', parameters('AzureSearchKey'))]"
                         },
                         {
                             "name": "AZURE_SEARCH_USE_SEMANTIC_SEARCH",
@@ -439,6 +468,14 @@
                         {
                             "name": "AZURE_SEARCH_URL_COLUMN",
                             "value": "[parameters('AzureSearchUrlColumn')]"
+                        },
+                        {
+                            "name": "N8N_WEBHOOK_URL",
+                            "value": "[if(equals(parameters('DatasourceType'), 'N8N'), parameters('N8NWebhookUrl'), '')]"
+                        },
+                        {
+                            "name": "N8N_BEARER_TOKEN",
+                            "value": "[if(equals(parameters('DatasourceType'), 'N8N'), parameters('N8NBearerToken'), '')]"
                         },
                         {
                             "name": "AZURE_OPENAI_RESOURCE",
