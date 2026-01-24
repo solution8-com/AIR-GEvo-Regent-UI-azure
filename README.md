@@ -188,6 +188,8 @@ Note: RBAC assignments can take a few minutes before becoming effective.
     |AZURE_SEARCH_VECTOR_COLUMNS|No||List of fields in your search index that contain vector embeddings of your documents to use when formulating a bot response. Represent these as a string joined with "|", e.g. `"product_description|product_manual"`|
     |AZURE_SEARCH_PERMITTED_GROUPS_COLUMN|No||Field from your Azure AI Search index that contains AAD group IDs that determine document-level access control.|
 
+    > To use the N8N data backend instead of Azure Search, set `DATASOURCE_TYPE` to `N8N` and configure `N8N_WEBHOOK_URL` and `N8N_BEARER_TOKEN`. When `DATASOURCE_TYPE` is `N8N`, Azure Search settings are not required.
+
     When using your own data with a vector index, ensure these settings are configured on your app:
     - `AZURE_SEARCH_QUERY_TYPE`: can be `vector`, `vectorSimpleHybrid`, or `vectorSemanticHybrid`,
     - `AZURE_OPENAI_EMBEDDING_NAME`: the name of your Ada (text-embedding-ada-002) model deployment on your Azure OpenAI resource.
