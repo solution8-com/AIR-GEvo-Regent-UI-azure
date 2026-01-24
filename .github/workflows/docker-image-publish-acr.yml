@@ -5,6 +5,7 @@ on:
     branches:
     - main
     - activating-acr-only
+    - copilot/add-n8n-webhook-chat-backend-again
   workflow_dispatch:
 
 env:
