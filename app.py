@@ -633,6 +633,8 @@ async def build_n8n_payload(request_body, request_headers):
         if msg.get("role") == "user" and msg.get("id"):
             first_message_id = msg.get("id")
             break
+    latest_message = messages[-1] if messages else {}
+    latest_content = _normalize_n8n_content(latest_message.get("content"))
     # Prefer explicit conversation_id, then first user message id, then current message id.
     session_id = conversation_id or first_message_id or message_id
     idempotency_key = hashlib.sha256(
@@ -642,14 +644,19 @@ async def build_n8n_payload(request_body, request_headers):
     if current_app.cosmos_conversation_client and conversation_id and user_id:
         try:
             stored_messages = await current_app.cosmos_conversation_client.get_messages(user_id, conversation_id)
-            _append_history_messages(history, stored_messages[-N8N_HISTORY_MAX_MESSAGES:])
+            history_messages = stored_messages[-N8N_HISTORY_MAX_MESSAGES:]
+            if history_messages and latest_content:
+                last_stored = history_messages[-1]
+                last_content = _normalize_n8n_content(last_stored.get("content"))
+                if last_content == latest_content and last_stored.get("role") == latest_message.get("role"):
+                    history_messages = history_messages[:-1]
+            _append_history_messages(history, history_messages)
         except Exception:
             logging.exception("Failed to load conversation history for n8n")
     if not history and len(messages) > 1:
         # When Cosmos history is unavailable, include prior messages but exclude latest user input.
         _append_history_messages(history, messages[:-1])
-    latest_message = messages[-1] if messages else {}
-    chat_input = _normalize_n8n_content(latest_message.get("content"))
+    chat_input = latest_content
     payload = {
         "chatInput": chat_input,
         "sessionId": session_id,
