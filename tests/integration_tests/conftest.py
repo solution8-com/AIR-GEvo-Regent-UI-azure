@@ -57,7 +57,28 @@ def dotenv_template_params_from_env() -> dict[str, str]:
         "ELASTICSEARCH_QUERY"
     ]
     
-    return {s: get_and_unset_variable(s) for s in env_secrets}
+    env_values = {s: get_and_unset_variable(s) for s in env_secrets}
+    defaults = {
+        "AZURE_OPENAI_ENDPOINT": "https://dummy.openai.azure.com",
+        "AZURE_OPENAI_MODEL": "gpt-4o-mini",
+        "AZURE_OPENAI_KEY": "dummy",
+        "AZURE_SEARCH_SERVICE": "search_service",
+        "AZURE_SEARCH_INDEX": "search_index",
+        "AZURE_SEARCH_KEY": "dummy",
+        "AZURE_SEARCH_QUERY": "What is Contoso?",
+        "ELASTICSEARCH_ENDPOINT": "https://localhost:9200",
+        "ELASTICSEARCH_INDEX": "elastic_index",
+        "ELASTICSEARCH_QUERY": "What is Contoso?",
+        "ELASTICSEARCH_ENCODED_API_KEY": "dummy",
+        "AZURE_COSMOSDB_ACCOUNT": "dummy-account",
+        "AZURE_COSMOSDB_DATABASE": "dummy-db",
+        "AZURE_COSMOSDB_CONVERSATIONS_CONTAINER": "dummy-container",
+        "AZURE_COSMOSDB_ACCOUNT_KEY": "dummy-key"
+    }
+    for key, value in defaults.items():
+        if not env_values.get(key):
+            env_values[key] = value
+    return env_values
 
 
 @pytest.fixture(scope="module")
@@ -66,4 +87,3 @@ def dotenv_template_params(request, use_keyvault_secrets):
         return request.getfixturevalue("dotenv_template_params_from_kv")
     
     return request.getfixturevalue("dotenv_template_params_from_env")
-
