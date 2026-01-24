@@ -5,6 +5,8 @@ import logging
 import uuid
 import httpx
 import asyncio
+import hashlib
+from datetime import datetime
 from quart import (
     Blueprint,
     Quart,
@@ -34,6 +36,7 @@ from backend.utils import (
     format_non_streaming_response,
     convert_to_pf_format,
     format_pf_non_streaming_response,
+    format_n8n_response,
 )
 
 bp = Blueprint("routes", __name__, static_folder="static", template_folder="static")
@@ -84,6 +87,10 @@ if DEBUG.lower() == "true":
     logging.basicConfig(level=logging.DEBUG)
 
 USER_AGENT = "GitHubSampleWebApp/AsyncAzureOpenAI/1.0.0"
+N8N_REQUEST_TIMEOUT = 30.0
+N8N_MAX_RETRIES = 2
+N8N_HISTORY_MAX_MESSAGES = 20
+N8N_IDEMPOTENCY_TTL = 3600
 
 
 # Frontend Settings via Environment Variables
@@ -113,6 +120,13 @@ MS_DEFENDER_ENABLED = os.environ.get("MS_DEFENDER_ENABLED", "true").lower() == "
 
 azure_openai_tools = []
 azure_openai_available_tools = []
+_n8n_idempotency_cache = {}
+
+
+class N8NError(Exception):
+    def __init__(self, message, status_code=500):
+        super().__init__(message)
+        self.status_code = status_code
 
 # Initialize Azure OpenAI Client
 async def init_openai_client():
@@ -562,17 +576,134 @@ async def stream_chat_request(request_body, request_headers):
     return generate(apim_request_id=apim_request_id, history_metadata=history_metadata)
 
 
+async def build_n8n_payload(request_body, request_headers):
+    authenticated_user = get_authenticated_user_details(request_headers)
+    user_id = authenticated_user.get("user_principal_id")
+    history_metadata = request_body.get("history_metadata", {})
+    conversation_id = history_metadata.get("conversation_id")
+    if not conversation_id:
+        conversation_id = request_body.get("conversation_id")
+    message_id = request_body.get("messages", [{}])[-1].get("id", str(uuid.uuid4()))
+    idempotency_key = hashlib.sha256(
+        f"{user_id}-{conversation_id}-{message_id}".encode("utf-8")
+    ).hexdigest()
+    history = []
+    if current_app.cosmos_conversation_client and conversation_id and user_id:
+        try:
+            stored_messages = await current_app.cosmos_conversation_client.get_messages(user_id, conversation_id)
+            for msg in stored_messages[-N8N_HISTORY_MAX_MESSAGES:]:
+                history.append({"role": msg.get("role"), "content": msg.get("content")})
+        except Exception:
+            logging.exception("Failed to load conversation history for n8n")
+    latest_message = request_body.get("messages", [])[-1] if request_body.get("messages") else {}
+    payload = {
+        "conversation_id": conversation_id,
+        "user_id": user_id,
+        "latest_message": {
+            "role": latest_message.get("role"),
+            "content": latest_message.get("content"),
+        },
+        "history": history,
+        "metadata": {
+            "timestamp": datetime.utcnow().isoformat(),
+            "idempotency_key": idempotency_key,
+            "provider": "n8n",
+        },
+    }
+    return payload, idempotency_key, message_id, history_metadata
+
+
+def _prune_n8n_cache(now):
+    expired_keys = [
+        key for key, item in _n8n_idempotency_cache.items()
+        if now - item["timestamp"] > N8N_IDEMPOTENCY_TTL
+    ]
+    for key in expired_keys:
+        _n8n_idempotency_cache.pop(key, None)
+
+
+async def call_n8n_webhook(payload, idempotency_key):
+    if not app_settings.n8n:
+        raise N8NError("N8N configuration missing", status_code=500)
+    headers = {
+        "Authorization": f"Bearer {app_settings.n8n.bearer_token}",
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotency_key,
+    }
+    attempt = 0
+    while True:
+        try:
+            async with httpx.AsyncClient(timeout=N8N_REQUEST_TIMEOUT) as client:
+                response = await client.post(
+                    app_settings.n8n.webhook_url,
+                    json=payload,
+                    headers=headers,
+                )
+            response.raise_for_status()
+            return response.json()
+        except (httpx.TimeoutException, httpx.TransportError) as exc:
+            attempt += 1
+            logging.warning("Transient n8n error (attempt %s): %s", attempt, exc)
+            if attempt > N8N_MAX_RETRIES:
+                raise N8NError("N8N request timed out", status_code=504) from exc
+            await asyncio.sleep(0.5)
+        except httpx.HTTPStatusError as exc:
+            logging.error("N8N webhook returned error status %s", exc.response.status_code)
+            raise N8NError("N8N webhook error", status_code=502) from exc
+        except json.JSONDecodeError as exc:
+            logging.error("N8N webhook returned invalid JSON")
+            raise N8NError("N8N webhook returned invalid JSON", status_code=502) from exc
+
+
+def parse_n8n_response(n8n_response):
+    if not isinstance(n8n_response, dict):
+        raise N8NError("N8N response is invalid", status_code=502)
+    if "content" in n8n_response:
+        return n8n_response["content"]
+    response = n8n_response.get("response")
+    if isinstance(response, dict) and "content" in response:
+        return response["content"]
+    raise N8NError("N8N response missing content", status_code=502)
+
+
+async def n8n_chat_request(request_body, request_headers):
+    if not app_settings.n8n or not app_settings.n8n.webhook_url or not app_settings.n8n.bearer_token:
+        logging.error("N8N configuration missing or incomplete")
+        raise N8NError("N8N configuration missing", status_code=500)
+    payload, idempotency_key, message_id, history_metadata = await build_n8n_payload(request_body, request_headers)
+    now = int(datetime.utcnow().timestamp())
+    _prune_n8n_cache(now)
+    cached = _n8n_idempotency_cache.get(idempotency_key)
+    if cached:
+        logging.info("Returning cached n8n response for idempotency key")
+        return cached["response"], message_id, history_metadata
+    n8n_response = await call_n8n_webhook(payload, idempotency_key)
+    content = parse_n8n_response(n8n_response)
+    response_obj = format_n8n_response(content, history_metadata, message_id)
+    _n8n_idempotency_cache[idempotency_key] = {"response": response_obj, "timestamp": now}
+    return response_obj, message_id, history_metadata
+
+
 async def conversation_internal(request_body, request_headers):
     try:
-        if app_settings.azure_openai.stream and not app_settings.base_settings.use_promptflow:
-            result = await stream_chat_request(request_body, request_headers)
-            response = await make_response(format_as_ndjson(result))
+        if app_settings.base_settings.chat_provider == "n8n":
+            response_obj, _, _ = await n8n_chat_request(request_body, request_headers)
+            async def generate():
+                yield response_obj
+            response = await make_response(format_as_ndjson(generate()))
             response.timeout = None
             response.mimetype = "application/json-lines"
             return response
         else:
-            result = await complete_chat_request(request_body, request_headers)
-            return jsonify(result)
+            if app_settings.azure_openai.stream and not app_settings.base_settings.use_promptflow:
+                result = await stream_chat_request(request_body, request_headers)
+                response = await make_response(format_as_ndjson(result))
+                response.timeout = None
+                response.mimetype = "application/json-lines"
+                return response
+            else:
+                result = await complete_chat_request(request_body, request_headers)
+                return jsonify(result)
 
     except Exception as ex:
         logging.exception(ex)
