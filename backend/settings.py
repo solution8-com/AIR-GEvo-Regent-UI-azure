@@ -749,7 +749,19 @@ class _MongoDbSettings(BaseSettings, DatasourcePayloadConstructor):
             "parameters": parameters
         }
         
-        
+
+class _N8NSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="N8N_",
+        env_file=DOTENV_PATH,
+        extra="ignore",
+        env_ignore_empty=True
+    )
+    
+    webhook_url: str
+    bearer_token: str
+
+
 class _BaseSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=DOTENV_PATH,
@@ -761,6 +773,7 @@ class _BaseSettings(BaseSettings):
     auth_enabled: bool = True
     sanitize_answer: bool = False
     use_promptflow: bool = False
+    chat_provider: Literal["azure_openai", "n8n"] = "azure_openai"
 
 
 class _AppSettings(BaseModel):
@@ -773,6 +786,7 @@ class _AppSettings(BaseModel):
     chat_history: Optional[_ChatHistorySettings] = None
     datasource: Optional[DatasourcePayloadConstructor] = None
     promptflow: Optional[_PromptflowSettings] = None
+    n8n: Optional[_N8NSettings] = None
 
     @model_validator(mode="after")
     def set_promptflow_settings(self) -> "_AppSettings":
