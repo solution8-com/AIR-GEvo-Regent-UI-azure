@@ -55,6 +55,8 @@ param authClientSecret string
 
 // Used for Cosmos DB
 param cosmosAccountName string = ''
+param cosmosAccountResourceGroupName string = ''
+param useExistingCosmosAccount bool = false
 
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
@@ -76,6 +78,10 @@ resource openAiResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' exi
 
 resource searchServiceResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(searchServiceResourceGroupName)) {
   name: !empty(searchServiceResourceGroupName) ? searchServiceResourceGroupName : resourceGroup.name
+}
+
+resource cosmosResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (useExistingCosmosAccount && !empty(cosmosAccountResourceGroupName)) {
+  name: cosmosAccountResourceGroupName
 }
 
 
@@ -195,7 +201,7 @@ module searchService 'core/search/search-services.bicep' = {
 }
 
 // The application database
-module cosmos 'db.bicep' = {
+module cosmos 'db.bicep' = if (!useExistingCosmosAccount) {
   name: 'cosmos'
   scope: resourceGroup
   params: {
@@ -204,6 +210,33 @@ module cosmos 'db.bicep' = {
     tags: tags
     principalIds: [principalId, backend.outputs.identityPrincipalId]
   }
+}
+
+resource existingCosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2022-08-15' existing = if (useExistingCosmosAccount) {
+  name: cosmosAccountName
+  scope: cosmosResourceGroup
+}
+
+module existingCosmosRoleDefinition 'core/database/cosmos/sql/cosmos-sql-role-def.bicep' = if (useExistingCosmosAccount) {
+  name: 'cosmos-existing-role-definition'
+  scope: cosmosResourceGroup
+  params: {
+    accountName: cosmosAccountName
+  }
+}
+
+module existingCosmosRoleAssignment 'core/database/cosmos/sql/cosmos-sql-role-assign.bicep' = if (useExistingCosmosAccount) {
+  name: 'cosmos-existing-role-assignment'
+  scope: cosmosResourceGroup
+  params: {
+    accountName: cosmosAccountName
+    roleDefinitionId: existingCosmosRoleDefinition.outputs.id
+    principalId: backend.outputs.identityPrincipalId
+  }
+  dependsOn: [
+    backend
+    existingCosmosRoleDefinition
+  ]
 }
 
 
@@ -327,8 +360,8 @@ output AZURE_FORMRECOGNIZER_RESOURCE_GROUP string = docPrepResources.outputs.AZU
 output AZURE_FORMRECOGNIZER_SKU_NAME string = docPrepResources.outputs.AZURE_FORMRECOGNIZER_SKU_NAME
 
 // cosmos
-output AZURE_COSMOSDB_ACCOUNT string = cosmos.outputs.accountName
-output AZURE_COSMOSDB_DATABASE string = cosmos.outputs.databaseName
-output AZURE_COSMOSDB_CONVERSATIONS_CONTAINER string = cosmos.outputs.containerName
+output AZURE_COSMOSDB_ACCOUNT string = useExistingCosmosAccount ? cosmosAccountName : cosmos.outputs.accountName
+output AZURE_COSMOSDB_DATABASE string = useExistingCosmosAccount ? 'db_conversation_history' : cosmos.outputs.databaseName
+output AZURE_COSMOSDB_CONVERSATIONS_CONTAINER string = useExistingCosmosAccount ? 'conversations' : cosmos.outputs.containerName
 
 output AUTH_ISSUER_URI string = authIssuerUri

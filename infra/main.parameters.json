@@ -43,6 +43,15 @@
     },
     "authClientSecret": {
       "value": "${AUTH_CLIENT_SECRET}"
+    },
+    "cosmosAccountName": {
+      "value": "${AZURE_COSMOSDB_ACCOUNT}"
+    },
+    "cosmosAccountResourceGroupName": {
+      "value": "${AZURE_COSMOSDB_RESOURCE_GROUP}"
+    },
+    "useExistingCosmosAccount": {
+      "value": "${AZURE_COSMOSDB_USE_EXISTING}"
     }
   }
 }

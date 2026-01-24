@@ -251,6 +251,27 @@
                 "description": "Enable chat history by deploying a Cosmos DB instance"
             }
         },
+        "UseExistingCosmosAccount": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Use an existing Cosmos DB account instead of deploying a new one"
+            }
+        },
+        "ExistingCosmosAccountName": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Name of an existing Cosmos DB account"
+            }
+        },
+        "ExistingCosmosAccountResourceGroup": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Resource group containing the existing Cosmos DB account"
+            }
+        },
         "ElasticsearchEndpoint": {
             "type": "string",
             "defaultValue": "",
@@ -355,7 +376,7 @@
         "cosmosdb_account_name": "[format('db-{0}', parameters('WebsiteName'))]",
         "cosmosdb_database_name": "db_conversation_history",
         "cosmosdb_container_name": "conversations",
-        "roleDefinitionId": "00000000-0000-0000-0000-000000000002", // Cosmos DB Built-in Data Contributor Role
+        "roleDefinitionId": "00000000-0000-0000-0000-000000000002",
         "roleAssignmentId": "[guid(variables('roleDefinitionId'), parameters('WebsiteName'), resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosdb_account_name')))]"
     },
     "resources": [
@@ -506,7 +527,7 @@
                         },
                         {
                             "name": "AZURE_COSMOSDB_ACCOUNT",
-                            "value": "[if(parameters('WebAppEnableChatHistory'), variables('cosmosdb_account_name'), '')]"
+                            "value": "[if(parameters('UseExistingCosmosAccount'), parameters('ExistingCosmosAccountName'), if(parameters('WebAppEnableChatHistory'), variables('cosmosdb_account_name'), ''))]"
                         },
                         {
                             "name": "AZURE_COSMOSDB_DATABASE",
@@ -595,7 +616,7 @@
             "kind": "web"
         },
         {
-            "condition": "[parameters('WebAppEnableChatHistory')]",
+            "condition": "[and(parameters('WebAppEnableChatHistory'), not(parameters('UseExistingCosmosAccount')))]",
             "type": "Microsoft.DocumentDB/databaseAccounts",
             "apiVersion": "2023-04-15",
             "name": "[variables('cosmosdb_account_name')]",
@@ -621,7 +642,7 @@
             }
         },
         {
-            "condition": "[parameters('WebAppEnableChatHistory')]",
+            "condition": "[and(parameters('WebAppEnableChatHistory'), not(parameters('UseExistingCosmosAccount')))]",
             "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
             "apiVersion": "2023-04-15",
             "name": "[concat(variables('cosmosdb_account_name'), '/', variables('cosmosdb_database_name'))]",
@@ -635,7 +656,7 @@
             }
         },
         {
-            "condition": "[parameters('WebAppEnableChatHistory')]",
+            "condition": "[and(parameters('WebAppEnableChatHistory'), not(parameters('UseExistingCosmosAccount')))]",
             "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
             "apiVersion": "2023-04-15",
             "name": "[concat(variables('cosmosdb_account_name'), '/', variables('cosmosdb_database_name'), '/conversations')]",
@@ -670,7 +691,7 @@
             }
         },
         {
-            "condition": "[parameters('WebAppEnableChatHistory')]",
+            "condition": "[and(parameters('WebAppEnableChatHistory'), not(parameters('UseExistingCosmosAccount')))]",
             "type": "Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments",
             "apiVersion": "2021-04-15",
             "name": "[format('{0}/{1}', variables('cosmosdb_account_name'), variables('roleAssignmentId'))]",
@@ -681,6 +702,20 @@
             },
             "dependsOn": [
                 "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosdb_account_name'))]"
+            ]
+        },
+        {
+            "condition": "[and(parameters('WebAppEnableChatHistory'), parameters('UseExistingCosmosAccount'))]",
+            "type": "Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments",
+            "apiVersion": "2021-04-15",
+            "name": "[format('{0}/{1}', parameters('ExistingCosmosAccountName'), variables('roleAssignmentId'))]",
+            "properties": {
+                "roleDefinitionId": "[resourceId(parameters('ExistingCosmosAccountResourceGroup'), 'Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions', parameters('ExistingCosmosAccountName'), variables('roleDefinitionId'))]",
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('WebsiteName')), '2021-02-01', 'Full').identity.principalId]",
+                "scope": "[resourceId(parameters('ExistingCosmosAccountResourceGroup'), 'Microsoft.DocumentDB/databaseAccounts', parameters('ExistingCosmosAccountName'))]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('WebsiteName'))]"
             ]
         }
     ]
