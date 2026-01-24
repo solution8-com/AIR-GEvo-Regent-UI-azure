@@ -919,6 +919,7 @@ class _AppSettings(BaseModel):
         except ValidationError as e:
             logging.warning("No datasource configuration found in the environment -- calls will be made to Azure OpenAI without grounding data.")
             logging.warning(e.errors())
+            return self
 
 
 app_settings = _AppSettings()
