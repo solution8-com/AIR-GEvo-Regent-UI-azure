@@ -36,7 +36,7 @@ param openAiResourceGroupLocation string = location
 param openAiSkuName string = ''
 param openAIModel string = '5mini'
 param openAIModelName string = 'gpt-5-mini'
-param openAITemperature int = ''
+param openAITemperature int = 0
 param openAITopP int = 1
 param openAIMaxTokens int = 3000
 param openAIStopSequence string = ''
@@ -69,10 +69,16 @@ var deploySearchResources = toLower(datasourceType) != 'n8n'
 var datasourceAppSettings = !empty(datasourceType) ? {
   DATASOURCE_TYPE: datasourceType
 } : {}
+var searchServiceNameOutput = deploySearchResources ? searchService.outputs.name : ''
+var searchServiceAdminKeyOutput = deploySearchResources ? searchService.outputs.adminKey : ''
+var searchServiceSkuNameOutput = deploySearchResources ? searchService.outputs.skuName : ''
+var formRecognizerServiceOutput = deploySearchResources ? docPrepResources.outputs.AZURE_FORMRECOGNIZER_SERVICE : ''
+var formRecognizerResourceGroupOutput = deploySearchResources ? docPrepResources.outputs.AZURE_FORMRECOGNIZER_RESOURCE_GROUP : ''
+var formRecognizerSkuNameOutput = deploySearchResources ? docPrepResources.outputs.AZURE_FORMRECOGNIZER_SKU_NAME : ''
 var searchAppSettings = deploySearchResources ? {
   AZURE_SEARCH_INDEX: searchIndexName
-  AZURE_SEARCH_SERVICE: searchService.outputs.name
-  AZURE_SEARCH_KEY: searchService.outputs.adminKey
+  AZURE_SEARCH_SERVICE: searchServiceNameOutput
+  AZURE_SEARCH_KEY: searchServiceAdminKeyOutput
   AZURE_SEARCH_USE_SEMANTIC_SEARCH: searchUseSemanticSearch
   AZURE_SEARCH_SEMANTIC_SEARCH_CONFIG: searchSemanticSearchConfig
   AZURE_SEARCH_TOP_K: searchTopK
@@ -300,10 +306,10 @@ output BACKEND_URI string = backend.outputs.uri
 
 // search
 output AZURE_SEARCH_INDEX string = deploySearchResources ? searchIndexName : ''
-output AZURE_SEARCH_SERVICE string = deploySearchResources ? searchService.outputs.name : ''
+output AZURE_SEARCH_SERVICE string = deploySearchResources ? searchServiceNameOutput : ''
 output AZURE_SEARCH_SERVICE_RESOURCE_GROUP string = deploySearchResources ? searchServiceResourceGroup.name : ''
-output AZURE_SEARCH_SKU_NAME string = deploySearchResources ? searchService.outputs.skuName : ''
-output AZURE_SEARCH_KEY string = deploySearchResources ? searchService.outputs.adminKey : ''
+output AZURE_SEARCH_SKU_NAME string = deploySearchResources ? searchServiceSkuNameOutput : ''
+output AZURE_SEARCH_KEY string = deploySearchResources ? searchServiceAdminKeyOutput : ''
 output AZURE_SEARCH_USE_SEMANTIC_SEARCH bool = deploySearchResources ? searchUseSemanticSearch : false
 output AZURE_SEARCH_SEMANTIC_SEARCH_CONFIG string = deploySearchResources ? searchSemanticSearchConfig : ''
 output AZURE_SEARCH_TOP_K int = deploySearchResources ? searchTopK : 0
@@ -330,9 +336,9 @@ output AZURE_OPENAI_SYSTEM_MESSAGE string = openAISystemMessage
 output AZURE_OPENAI_STREAM bool = openAIStream
 
 // Used by prepdocs.py:
-output AZURE_FORMRECOGNIZER_SERVICE string = deploySearchResources ? docPrepResources.outputs.AZURE_FORMRECOGNIZER_SERVICE : ''
-output AZURE_FORMRECOGNIZER_RESOURCE_GROUP string = deploySearchResources ? docPrepResources.outputs.AZURE_FORMRECOGNIZER_RESOURCE_GROUP : ''
-output AZURE_FORMRECOGNIZER_SKU_NAME string = deploySearchResources ? docPrepResources.outputs.AZURE_FORMRECOGNIZER_SKU_NAME : ''
+output AZURE_FORMRECOGNIZER_SERVICE string = deploySearchResources ? formRecognizerServiceOutput : ''
+output AZURE_FORMRECOGNIZER_RESOURCE_GROUP string = deploySearchResources ? formRecognizerResourceGroupOutput : ''
+output AZURE_FORMRECOGNIZER_SKU_NAME string = deploySearchResources ? formRecognizerSkuNameOutput : ''
 
 // cosmos
 output AZURE_COSMOSDB_ACCOUNT string = cosmos.outputs.accountName

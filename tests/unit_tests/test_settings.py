@@ -72,6 +72,3 @@ def test_dotenv_with_n8n_datasource(app_settings):
     assert app_settings.base_settings.datasource_type == "N8N"
     assert app_settings.datasource is None
     assert app_settings.azure_openai is not None
-
-    
-    
