@@ -36,8 +36,10 @@ param openAiResourceGroupLocation string = location
 param openAiSkuName string = ''
 param openAIModel string = '5mini'
 param openAIModelName string = 'gpt-5-mini'
-param openAITemperature int = 0
-param openAITopP int = 1
+@minLength(1)
+param openAITemperature string = '0'
+@minLength(1)
+param openAITopP string = '1'
 param openAIMaxTokens int = 3000
 param openAIStopSequence string = ''
 param openAISystemMessage string = 'You are an AI assistant that helps people find information.'
@@ -139,7 +141,7 @@ module backend 'core/host/appservice.bicep' = {
     authClientSecret: authClientSecret
     authClientId: authClientId
     authIssuerUri: authIssuerUri
-    appSettings: union(datasourceAppSettings, searchAppSettings, {
+    appSettings: union(datasourceAppSettings ?? {}, searchAppSettings ?? {}, {
       // openai
       AZURE_OPENAI_RESOURCE: openAi.outputs.name
       AZURE_OPENAI_MODEL: openAIModel
@@ -328,8 +330,8 @@ output AZURE_OPENAI_MODEL_NAME string = openAIModelName
 output AZURE_OPENAI_SKU_NAME string = openAi.outputs.skuName
 output AZURE_OPENAI_KEY string = openAi.outputs.key
 output AZURE_OPENAI_EMBEDDING_NAME string = '${embeddingDeploymentName}'
-output AZURE_OPENAI_TEMPERATURE int = openAITemperature
-output AZURE_OPENAI_TOP_P int = openAITopP
+output AZURE_OPENAI_TEMPERATURE string = openAITemperature
+output AZURE_OPENAI_TOP_P string = openAITopP
 output AZURE_OPENAI_MAX_TOKENS int = openAIMaxTokens
 output AZURE_OPENAI_STOP_SEQUENCE string = openAIStopSequence
 output AZURE_OPENAI_SYSTEM_MESSAGE string = openAISystemMessage
