@@ -587,3 +587,41 @@ This project may contain trademarks or logos for projects, products, or services
 trademarks or logos is subject to and must follow [Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general).
 Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
 Any use of third-party trademarks or logos are subject to those third-party's policies.
+
+## n8n Webhook Integration
+
+This application supports n8n workflows as an alternate chat backend. See [DEPLOYMENT-N8N.md](./DEPLOYMENT-N8N.md) for complete deployment instructions.
+
+### Quick Start with n8n
+
+```bash
+# Minimal deployment (App Service + Cosmos DB only)
+azd env set DEPLOY_OPENAI false
+azd env set DEPLOY_SEARCH false
+azd env set DEPLOY_FORM_RECOGNIZER false
+azd env set CHAT_PROVIDER n8n
+azd env set N8N_WEBHOOK_URL "https://your-n8n-instance.com/webhook/your-webhook-id"
+azd env set N8N_BEARER_TOKEN "your-secret-bearer-token"
+azd up
+```
+
+### n8n Configuration Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `CHAT_PROVIDER` | No | `aoai` | Set to `n8n` to enable n8n backend |
+| `N8N_WEBHOOK_URL` | Yes* | - | Full URL to your n8n webhook endpoint |
+| `N8N_BEARER_TOKEN` | Yes* | - | Bearer token for webhook authentication |
+| `N8N_TIMEOUT_MS` | No | `300000` | Request timeout in milliseconds |
+
+*Required when `CHAT_PROVIDER=n8n`
+
+### Benefits of n8n Deployment
+
+- **Cost Savings**: ~90% reduction (~$38/month vs ~$400/month full deployment)
+- **Custom RAG Pipelines**: Use n8n's visual workflow builder
+- **Flexible AI Agents**: Connect to any LLM or custom logic
+- **Conversation Memory**: Built-in Postgres memory in n8n workflows
+- **Same Authentication**: Entra ID login remains mandatory
+
+For detailed deployment scenarios, troubleshooting, and security considerations, see [DEPLOYMENT-N8N.md](./DEPLOYMENT-N8N.md).
