@@ -576,6 +576,26 @@ async def stream_chat_request(request_body, request_headers):
     return generate(apim_request_id=apim_request_id, history_metadata=history_metadata)
 
 
+def _normalize_n8n_content(content):
+    if isinstance(content, list):
+        for entry in content:
+            if isinstance(entry, dict) and entry.get("type") == "text":
+                text_value = entry.get("text")
+                if text_value:
+                    return text_value
+        return json.dumps(content)
+    if content is None:
+        return ""
+    return str(content)
+
+
+def _format_n8n_message(message):
+    return {
+        "role": message.get("role"),
+        "content": _normalize_n8n_content(message.get("content")),
+    }
+
+
 async def build_n8n_payload(request_body, request_headers):
     authenticated_user = get_authenticated_user_details(request_headers)
     user_id = authenticated_user.get("user_principal_id")
@@ -583,25 +603,35 @@ async def build_n8n_payload(request_body, request_headers):
     conversation_id = history_metadata.get("conversation_id")
     if not conversation_id:
         conversation_id = request_body.get("conversation_id")
-    message_id = request_body.get("messages", [{}])[-1].get("id", str(uuid.uuid4()))
+    messages = request_body.get("messages", [])
+    message_id = messages[-1].get("id", str(uuid.uuid4())) if messages else str(uuid.uuid4())
+    first_message_id = next((msg.get("id") for msg in messages if msg.get("id")), None)
+    session_id = conversation_id or first_message_id or message_id
     idempotency_key = hashlib.sha256(
-        f"{user_id}-{conversation_id}-{message_id}".encode("utf-8")
+        f"{session_id}-{message_id}".encode("utf-8")
     ).hexdigest()
     history = []
     if current_app.cosmos_conversation_client and conversation_id and user_id:
         try:
             stored_messages = await current_app.cosmos_conversation_client.get_messages(user_id, conversation_id)
             for msg in stored_messages[-N8N_HISTORY_MAX_MESSAGES:]:
-                history.append({"role": msg.get("role"), "content": msg.get("content")})
+                history.append(_format_n8n_message(msg))
         except Exception:
             logging.exception("Failed to load conversation history for n8n")
-    latest_message = request_body.get("messages", [])[-1] if request_body.get("messages") else {}
+    if not history and messages:
+        for msg in messages[:-1]:
+            history.append(_format_n8n_message(msg))
+    latest_message = messages[-1] if messages else {}
+    chat_input = _normalize_n8n_content(latest_message.get("content"))
     payload = {
+        "chatInput": chat_input,
+        "sessionId": session_id,
         "conversation_id": conversation_id,
         "user_id": user_id,
+        "message_id": message_id,
         "latest_message": {
             "role": latest_message.get("role"),
-            "content": latest_message.get("content"),
+            "content": chat_input,
         },
         "history": history,
         "metadata": {
@@ -656,13 +686,23 @@ async def call_n8n_webhook(payload, idempotency_key):
 
 
 def parse_n8n_response(n8n_response):
+    if isinstance(n8n_response, list):
+        if not n8n_response:
+            raise N8NError("N8N response is invalid", status_code=502)
+        n8n_response = n8n_response[0]
     if not isinstance(n8n_response, dict):
         raise N8NError("N8N response is invalid", status_code=502)
     if "content" in n8n_response:
         return n8n_response["content"]
+    if "output" in n8n_response:
+        return n8n_response["output"]
+    if "answer" in n8n_response:
+        return n8n_response["answer"]
     response = n8n_response.get("response")
     if isinstance(response, dict) and "content" in response:
         return response["content"]
+    if isinstance(response, dict) and "output" in response:
+        return response["output"]
     raise N8NError("N8N response missing content", status_code=502)
 
 
