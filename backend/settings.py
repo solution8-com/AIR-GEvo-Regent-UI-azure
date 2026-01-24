@@ -176,6 +176,9 @@ class _AzureOpenAISettings(BaseSettings):
     
     @model_validator(mode="after")
     def ensure_endpoint(self) -> "_AzureOpenAISettings":
+        chat_provider = os.environ.get("CHAT_PROVIDER", "aoai").lower()
+        if chat_provider == "n8n":
+            return self
         if not (self.endpoint or self.resource):
             raise ValueError("AZURE_OPENAI_ENDPOINT or AZURE_OPENAI_RESOURCE is required")
         if self.resource and not self.endpoint:
