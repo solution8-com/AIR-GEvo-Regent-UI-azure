@@ -607,8 +607,10 @@ async def build_n8n_payload(request_body, request_headers):
     if not conversation_id:
         conversation_id = request_body.get("conversation_id")
     messages = request_body.get("messages", [])
-    message_id = messages[-1].get("id", str(uuid.uuid4())) if messages else str(uuid.uuid4())
+    fallback_message_id = str(uuid.uuid4())
+    message_id = messages[-1].get("id", fallback_message_id) if messages else fallback_message_id
     first_message_id = next((msg.get("id") for msg in messages if msg.get("id")), None)
+    # Prefer explicit conversation_id, then first user message id, then current message id.
     session_id = conversation_id or first_message_id or message_id
     idempotency_key = hashlib.sha256(
         f"{user_id}-{session_id}-{message_id}".encode("utf-8")
@@ -622,6 +624,7 @@ async def build_n8n_payload(request_body, request_headers):
         except Exception:
             logging.exception("Failed to load conversation history for n8n")
     if not history and messages:
+        # When Cosmos history is unavailable, include prior messages but exclude latest user input.
         for msg in messages[:-1]:
             history.append(_format_n8n_message(msg))
     latest_message = messages[-1] if messages else {}
