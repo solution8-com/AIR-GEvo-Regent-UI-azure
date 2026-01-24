@@ -611,7 +611,7 @@ def _extract_n8n_item(n8n_response):
         if len(n8n_response) > 1:
             logging.warning("N8N response returned multiple items; using first item")
         else:
-            logging.debug("N8N response list received; using first item")
+            logging.debug("N8N response list received; using single item")
         n8n_response = n8n_response[0]
     if not isinstance(n8n_response, dict):
         raise N8NError("N8N response is invalid", status_code=502)
@@ -630,7 +630,7 @@ async def build_n8n_payload(request_body, request_headers):
     message_id = messages[-1].get("id", fallback_message_id) if messages else fallback_message_id
     first_message_id = None
     for msg in messages:
-        if msg.get("id"):
+        if msg.get("role") == "user" and msg.get("id"):
             first_message_id = msg.get("id")
             break
     # Prefer explicit conversation_id, then first user message id, then current message id.
@@ -645,7 +645,7 @@ async def build_n8n_payload(request_body, request_headers):
             _append_history_messages(history, stored_messages[-N8N_HISTORY_MAX_MESSAGES:])
         except Exception:
             logging.exception("Failed to load conversation history for n8n")
-    if not history and messages:
+    if not history and len(messages) > 1:
         # When Cosmos history is unavailable, include prior messages but exclude latest user input.
         _append_history_messages(history, messages[:-1])
     latest_message = messages[-1] if messages else {}
