@@ -583,7 +583,10 @@ def _normalize_n8n_content(content):
                 text_value = entry.get("text")
                 if text_value:
                     return text_value
-        return json.dumps(content)
+        try:
+            return json.dumps(content)
+        except (TypeError, ValueError):
+            return str(content)
     if content is None:
         return ""
     return str(content)
@@ -608,7 +611,7 @@ async def build_n8n_payload(request_body, request_headers):
     first_message_id = next((msg.get("id") for msg in messages if msg.get("id")), None)
     session_id = conversation_id or first_message_id or message_id
     idempotency_key = hashlib.sha256(
-        f"{session_id}-{message_id}".encode("utf-8")
+        f"{user_id}-{session_id}-{message_id}".encode("utf-8")
     ).hexdigest()
     history = []
     if current_app.cosmos_conversation_client and conversation_id and user_id:
@@ -689,6 +692,7 @@ def parse_n8n_response(n8n_response):
     if isinstance(n8n_response, list):
         if not n8n_response:
             raise N8NError("N8N response is invalid", status_code=502)
+        logging.debug("N8N response list received; using first item")
         n8n_response = n8n_response[0]
     if not isinstance(n8n_response, dict):
         raise N8NError("N8N response is invalid", status_code=502)
