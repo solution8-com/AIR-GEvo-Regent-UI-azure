@@ -176,7 +176,7 @@ class _AzureOpenAISettings(BaseSettings):
     
     @model_validator(mode="after")
     def ensure_endpoint(self) -> "_AzureOpenAISettings":
-        chat_provider = os.environ.get("CHAT_PROVIDER", "aoai").lower()
+        chat_provider = os.environ.get("CHAT_PROVIDER", "n8n").lower()
         if chat_provider == "n8n":
             return self
         if not (self.endpoint or self.resource):
@@ -789,7 +789,7 @@ class _BaseSettings(BaseSettings):
     auth_enabled: bool = True
     sanitize_answer: bool = False
     use_promptflow: bool = False
-    chat_provider: str = Field(default="aoai", validation_alias="CHAT_PROVIDER")
+    chat_provider: str = Field(default="n8n", validation_alias="CHAT_PROVIDER")
 
 
 class _AppSettings(BaseModel):
@@ -862,6 +862,10 @@ class _AppSettings(BaseModel):
             elif self.base_settings.datasource_type == "MongoDB":
                 object.__setattr__(self, "datasource", _MongoDbSettings(settings=self, _env_file=DOTENV_PATH))
                 logging.debug("Using Mongo DB")
+
+            elif self.base_settings.datasource_type == "n8n":
+                object.__setattr__(self, "datasource", None)
+                logging.debug("Using n8n webhook backend")
                 
             else:
                 object.__setattr__(self, "datasource", None)

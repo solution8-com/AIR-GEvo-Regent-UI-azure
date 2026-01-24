@@ -54,7 +54,11 @@ def dotenv_template_params_from_env() -> dict[str, str]:
         "ELASTICSEARCH_ENCODED_API_KEY",
         "ELASTICSEARCH_ENDPOINT",
         "ELASTICSEARCH_INDEX",
-        "ELASTICSEARCH_QUERY"
+        "ELASTICSEARCH_QUERY",
+        "CHAT_PROVIDER",
+        "DATASOURCE_TYPE",
+        "N8N_WEBHOOK_URL",
+        "N8N_BEARER_TOKEN"
     ]
     
     env_values = {s: get_and_unset_variable(s) for s in env_secrets}
@@ -73,7 +77,11 @@ def dotenv_template_params_from_env() -> dict[str, str]:
         "AZURE_COSMOSDB_ACCOUNT": "dummy-account",
         "AZURE_COSMOSDB_DATABASE": "dummy-db",
         "AZURE_COSMOSDB_CONVERSATIONS_CONTAINER": "dummy-container",
-        "AZURE_COSMOSDB_ACCOUNT_KEY": "dummy-key"
+        "AZURE_COSMOSDB_ACCOUNT_KEY": "dummy-key",
+        "CHAT_PROVIDER": "n8n",
+        "DATASOURCE_TYPE": "n8n",
+        "N8N_WEBHOOK_URL": "https://example.com/n8n-webhook",
+        "N8N_BEARER_TOKEN": "dummy-token"
     }
     for key, value in defaults.items():
         if not env_values.get(key):
