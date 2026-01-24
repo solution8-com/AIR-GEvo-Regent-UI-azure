@@ -10,6 +10,8 @@ This repo contains boilerplate code for a chat webapp that integrates with Azure
   - Elasticsearch index (preview)
   - Pinecone index (private preview)
   - Azure SQL Server (private preview)
+  - Azure Foundry PromptFlow
+  - Self-Hosted n8n
   - Mongo DB (preview)
   - any endpoint 
 
