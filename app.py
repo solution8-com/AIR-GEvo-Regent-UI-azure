@@ -599,6 +599,25 @@ def _format_n8n_message(message):
     }
 
 
+def _append_history_messages(history, messages):
+    for msg in messages:
+        history.append(_format_n8n_message(msg))
+
+
+def _extract_n8n_item(n8n_response):
+    if isinstance(n8n_response, list):
+        if not n8n_response:
+            raise N8NError("N8N response is invalid", status_code=502)
+        if len(n8n_response) > 1:
+            logging.warning("N8N response returned multiple items; using first item")
+        else:
+            logging.debug("N8N response list received; using first item")
+        n8n_response = n8n_response[0]
+    if not isinstance(n8n_response, dict):
+        raise N8NError("N8N response is invalid", status_code=502)
+    return n8n_response
+
+
 async def build_n8n_payload(request_body, request_headers):
     authenticated_user = get_authenticated_user_details(request_headers)
     user_id = authenticated_user.get("user_principal_id")
@@ -609,7 +628,11 @@ async def build_n8n_payload(request_body, request_headers):
     messages = request_body.get("messages", [])
     fallback_message_id = str(uuid.uuid4())
     message_id = messages[-1].get("id", fallback_message_id) if messages else fallback_message_id
-    first_message_id = next((msg.get("id") for msg in messages if msg.get("id")), None)
+    first_message_id = None
+    for msg in messages:
+        if msg.get("id"):
+            first_message_id = msg.get("id")
+            break
     # Prefer explicit conversation_id, then first user message id, then current message id.
     session_id = conversation_id or first_message_id or message_id
     idempotency_key = hashlib.sha256(
@@ -619,14 +642,12 @@ async def build_n8n_payload(request_body, request_headers):
     if current_app.cosmos_conversation_client and conversation_id and user_id:
         try:
             stored_messages = await current_app.cosmos_conversation_client.get_messages(user_id, conversation_id)
-            for msg in stored_messages[-N8N_HISTORY_MAX_MESSAGES:]:
-                history.append(_format_n8n_message(msg))
+            _append_history_messages(history, stored_messages[-N8N_HISTORY_MAX_MESSAGES:])
         except Exception:
             logging.exception("Failed to load conversation history for n8n")
     if not history and messages:
         # When Cosmos history is unavailable, include prior messages but exclude latest user input.
-        for msg in messages[:-1]:
-            history.append(_format_n8n_message(msg))
+        _append_history_messages(history, messages[:-1])
     latest_message = messages[-1] if messages else {}
     chat_input = _normalize_n8n_content(latest_message.get("content"))
     payload = {
@@ -692,13 +713,7 @@ async def call_n8n_webhook(payload, idempotency_key):
 
 
 def parse_n8n_response(n8n_response):
-    if isinstance(n8n_response, list):
-        if not n8n_response:
-            raise N8NError("N8N response is invalid", status_code=502)
-        logging.debug("N8N response list received; using first item")
-        n8n_response = n8n_response[0]
-    if not isinstance(n8n_response, dict):
-        raise N8NError("N8N response is invalid", status_code=502)
+    n8n_response = _extract_n8n_item(n8n_response)
     if "content" in n8n_response:
         return n8n_response["content"]
     if "output" in n8n_response:
