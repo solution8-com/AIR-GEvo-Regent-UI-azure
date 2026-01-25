@@ -251,13 +251,6 @@
                 "description": "Enable chat history by deploying a Cosmos DB instance"
             }
         },
-        "UseContainerRegistry": {
-            "type": "bool",
-            "defaultValue": false,
-            "metadata": {
-                "description": "Deploy or use an Azure Container Registry for the web app image"
-            }
-        },
         "UseExistingContainerRegistry": {
             "type": "bool",
             "defaultValue": false,
@@ -265,11 +258,46 @@
                 "description": "Use an existing Azure Container Registry instead of creating a new one"
             }
         },
-        "ContainerRegistryName": {
+        "ExistingContainerRegistryName": {
             "type": "string",
             "defaultValue": "",
             "metadata": {
-                "description": "Name of the Azure Container Registry to create or use"
+                "description": "Name of an existing Azure Container Registry"
+            }
+        },
+        "ExistingContainerRegistryResourceGroup": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Resource group containing the existing Azure Container Registry"
+            }
+        },
+        "ExistingContainerRegistryLoginServer": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Login server for an existing Azure Container Registry"
+            }
+        },
+        "ExistingContainerRegistryUsername": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Username for an existing Azure Container Registry"
+            }
+        },
+        "ExistingContainerRegistryPassword": {
+            "type": "securestring",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Password for an existing Azure Container Registry"
+            }
+        },
+        "ContainerRegistryName": {
+            "type": "string",
+            "defaultValue": "[format('acr{0}', uniqueString(resourceGroup().id))]",
+            "metadata": {
+                "description": "Name of the Azure Container Registry to create"
             }
         },
         "ContainerRegistrySku": {
@@ -298,25 +326,11 @@
                 "description": "Container image tag"
             }
         },
-        "ExistingContainerRegistryLoginServer": {
+        "ContainerRegistryLocation": {
             "type": "string",
-            "defaultValue": "",
+            "defaultValue": "[resourceGroup().location]",
             "metadata": {
-                "description": "Login server for an existing Azure Container Registry"
-            }
-        },
-        "ExistingContainerRegistryUsername": {
-            "type": "string",
-            "defaultValue": "",
-            "metadata": {
-                "description": "Username for an existing Azure Container Registry"
-            }
-        },
-        "ExistingContainerRegistryPassword": {
-            "type": "securestring",
-            "defaultValue": "",
-            "metadata": {
-                "description": "Password for an existing Azure Container Registry"
+                "description": "Location for the container registry or existing registry location"
             }
         },
         "UseExistingCosmosAccount": {
@@ -440,11 +454,12 @@
         }
     },
     "variables": {
-        "WebAppImageName": "[if(parameters('UseContainerRegistry'), format('DOCKER|{0}/{1}:{2}', if(parameters('UseExistingContainerRegistry'), parameters('ExistingContainerRegistryLoginServer'), concat(parameters('ContainerRegistryName'), '.azurecr.io')), parameters('ContainerImageName'), parameters('ContainerImageTag')), 'DOCKER|sampleappaoaichatgpt.azurecr.io/sample-app-aoai-chatgpt:latest')]",
+        "WebAppImageName": "[format('DOCKER|{0}/{1}:{2}', if(parameters('UseExistingContainerRegistry'), parameters('ExistingContainerRegistryLoginServer'), concat(parameters('ContainerRegistryName'), '.azurecr.io')), parameters('ContainerImageName'), parameters('ContainerImageTag'))]",
         "cosmosdb_account_name": "[format('db-{0}', parameters('WebsiteName'))]",
         "cosmosdb_database_name": "db_conversation_history",
         "cosmosdb_container_name": "conversations",
         "roleDefinitionId": "00000000-0000-0000-0000-000000000002",
+        "acrPullRoleDefinitionId": "7f951dda-4ed3-4680-a7ca-43fe172d538d",
         "roleAssignmentId": "[guid(variables('roleDefinitionId'), parameters('WebsiteName'), resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosdb_account_name')))]"
     },
     "resources": [
@@ -452,7 +467,7 @@
             "apiVersion": "2020-06-01",
             "name": "[parameters('HostingPlanName')]",
             "type": "Microsoft.Web/serverfarms",
-            "location": "[resourceGroup().location]",
+            "location": "[parameters('ContainerRegistryLocation')]",
             "sku": {
                 "name": "[parameters('HostingPlanSku')]"
             },
@@ -667,15 +682,15 @@
                         },
                         {
                             "name": "DOCKER_REGISTRY_SERVER_URL",
-                            "value": "[if(parameters('UseContainerRegistry'), concat('https://', if(parameters('UseExistingContainerRegistry'), parameters('ExistingContainerRegistryLoginServer'), concat(parameters('ContainerRegistryName'), '.azurecr.io'))), '')]"
+                            "value": "[concat('https://', if(parameters('UseExistingContainerRegistry'), parameters('ExistingContainerRegistryLoginServer'), concat(parameters('ContainerRegistryName'), '.azurecr.io')))]"
                         },
                         {
                             "name": "DOCKER_REGISTRY_SERVER_USERNAME",
-                            "value": "[if(parameters('UseContainerRegistry'), if(parameters('UseExistingContainerRegistry'), parameters('ExistingContainerRegistryUsername'), ''), '')]"
+                            "value": "[if(parameters('UseExistingContainerRegistry'), parameters('ExistingContainerRegistryUsername'), '')]"
                         },
                         {
                             "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
-                            "value": "[if(parameters('UseContainerRegistry'), if(parameters('UseExistingContainerRegistry'), parameters('ExistingContainerRegistryPassword'), ''), '')]"
+                            "value": "[if(parameters('UseExistingContainerRegistry'), parameters('ExistingContainerRegistryPassword'), '')]"
                         }                        
                     ],
                     "linuxFxVersion": "[variables('WebAppImageName')]"
@@ -696,7 +711,7 @@
             "kind": "web"
         },
         {
-            "condition": "[and(parameters('UseContainerRegistry'), not(parameters('UseExistingContainerRegistry')))]",
+            "condition": "[not(parameters('UseExistingContainerRegistry'))]",
             "type": "Microsoft.ContainerRegistry/registries",
             "apiVersion": "2023-07-01",
             "name": "[parameters('ContainerRegistryName')]",
@@ -705,7 +720,7 @@
                 "name": "[parameters('ContainerRegistrySku')]"
             },
             "properties": {
-                "adminUserEnabled": true
+                "adminUserEnabled": false
             },
             "dependsOn": []
         },
@@ -791,7 +806,7 @@
             "name": "[format('{0}/{1}', variables('cosmosdb_account_name'), variables('roleAssignmentId'))]",
             "properties": {
                 "roleDefinitionId": "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions', split(format('{0}/{1}', variables('cosmosdb_account_name'), variables('roleDefinitionId')), '/')[0], split(format('{0}/{1}', variables('cosmosdb_account_name'), variables('roleDefinitionId')), '/')[1])]",
-                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('WebsiteName')), '2021-02-01', 'Full').identity.principalId]",
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('WebsiteName')), '2022-03-01', 'Full').identity.principalId]",
                 "scope": "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosdb_account_name'))]"
             },
             "dependsOn": [
@@ -805,8 +820,37 @@
             "name": "[format('{0}/{1}', parameters('ExistingCosmosAccountName'), variables('roleAssignmentId'))]",
             "properties": {
                 "roleDefinitionId": "[resourceId(parameters('ExistingCosmosAccountResourceGroup'), 'Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions', parameters('ExistingCosmosAccountName'), variables('roleDefinitionId'))]",
-                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('WebsiteName')), '2021-02-01', 'Full').identity.principalId]",
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('WebsiteName')), '2022-03-01', 'Full').identity.principalId]",
                 "scope": "[resourceId(parameters('ExistingCosmosAccountResourceGroup'), 'Microsoft.DocumentDB/databaseAccounts', parameters('ExistingCosmosAccountName'))]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('WebsiteName'))]"
+            ]
+        },
+        {
+            "condition": "[not(parameters('UseExistingContainerRegistry'))]",
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2022-04-01",
+            "name": "[guid(resourceId('Microsoft.ContainerRegistry/registries', parameters('ContainerRegistryName')), parameters('WebsiteName'), variables('acrPullRoleDefinitionId'))]",
+            "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('acrPullRoleDefinitionId'))]",
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('WebsiteName')), '2022-03-01', 'Full').identity.principalId]",
+                "scope": "[resourceId('Microsoft.ContainerRegistry/registries', parameters('ContainerRegistryName'))]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('WebsiteName'))]",
+                "[resourceId('Microsoft.ContainerRegistry/registries', parameters('ContainerRegistryName'))]"
+            ]
+        },
+        {
+            "condition": "[and(parameters('UseExistingContainerRegistry'), not(empty(parameters('ExistingContainerRegistryName'))), not(empty(parameters('ExistingContainerRegistryResourceGroup'))))]",
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2022-04-01",
+            "name": "[guid(resourceId(parameters('ExistingContainerRegistryResourceGroup'), 'Microsoft.ContainerRegistry/registries', parameters('ExistingContainerRegistryName')), parameters('WebsiteName'), variables('acrPullRoleDefinitionId'))]",
+            "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('acrPullRoleDefinitionId'))]",
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('WebsiteName')), '2022-03-01', 'Full').identity.principalId]",
+                "scope": "[resourceId(parameters('ExistingContainerRegistryResourceGroup'), 'Microsoft.ContainerRegistry/registries', parameters('ExistingContainerRegistryName'))]"
             },
             "dependsOn": [
                 "[resourceId('Microsoft.Web/sites', parameters('WebsiteName'))]"
