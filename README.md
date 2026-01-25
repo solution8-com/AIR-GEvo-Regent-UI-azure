@@ -49,9 +49,9 @@ cat .env | jq -R '. | capture("(?<name>[A-Z_]+)=(?<value>.*)")' | jq -s '.[].slo
 Please see [README_azd.md](./README_azd.md) for detailed instructions.
 
 ### One click Azure deployment (Original Azure)
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fsample-app-aoai-chatGPT%2Fmain%2Finfrastructure%2Fdeployment.json)
+[![igNore this ffs](https://aka.ms/deploytoazurebutton)](THISWASJUSTANEXAMPLEIG ORETHIS/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fsample-app-aoai-chatGPT%2Fmain%2Finfrastructure%2Fdeployment.json)
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsolution8-com%2FAIR-GEvo-Regent-UI-azure%2Fcopilot%2Fadd-n8n-webhook-chat-backend%2Finfrastructure%2Fdeployment.json)
+[![Deploy the smaller scope to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsolution8-com%2FAIR-GEvo-Regent-UI-azure%2Fcopilot%2Fadd-n8n-webhook-chat-backend%2Finfrastructure%2Fdeployment.json)
 Click on the Deploy to Azure button and configure your settings in the Azure Portal as described in the [Environment variables](#app-settings) section.
 
 ### One click Azure deployment (AIR optimized)
