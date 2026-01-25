@@ -566,7 +566,7 @@
                         },
                         {
                             "name": "AZURE_SEARCH_USE_SEMANTIC_SEARCH",
-                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchUseSemanticSearch'), '')]"
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchUseSemanticSearch'), false)]"
                         },
                         {
                             "name": "AZURE_SEARCH_SEMANTIC_SEARCH_CONFIG",
@@ -574,15 +574,15 @@
                         },
                         {
                             "name": "AZURE_SEARCH_INDEX_IS_PRECHUNKED",
-                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchIndexIsPrechunked'), '')]"
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchIndexIsPrechunked'), false)]"
                         },
                         {
                             "name": "AZURE_SEARCH_TOP_K",
-                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchTopK'), '')]"
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchTopK'), 0)]"
                         },
                         {
                             "name": "AZURE_SEARCH_ENABLE_IN_DOMAIN",
-                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchEnableInDomain'), '')]"
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchEnableInDomain'), false)]"
                         },
                         {
                             "name": "AZURE_SEARCH_CONTENT_COLUMNS",
@@ -618,15 +618,15 @@
                         },
                         {
                             "name": "AZURE_OPENAI_TEMPERATURE",
-                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAITemperature'), '')]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAITemperature'), 0)]"
                         },
                         {
                             "name": "AZURE_OPENAI_TOP_P",
-                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAITopP'), '')]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAITopP'), 0)]"
                         },
                         {
                             "name": "AZURE_OPENAI_MAX_TOKENS",
-                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAIMaxTokens'), '')]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAIMaxTokens'), 0)]"
                         },
                         {
                             "name": "AZURE_OPENAI_STOP_SEQUENCE",
@@ -638,11 +638,7 @@
                         },
                         {
                             "name": "AZURE_OPENAI_STREAM",
-                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAIStream'), '')]"
-                        },
-                        {
-                            "name": "AZURE_SEARCH_QUERY_TYPE",
-                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchQueryType'), '')]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAIStream'), false)]"
                         },
                         {
                             "name": "AZURE_SEARCH_VECTOR_COLUMNS",
@@ -654,7 +650,11 @@
                         },
                         {
                             "name": "AZURE_SEARCH_STRICTNESS",
-                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchStrictness'), '')]"
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchStrictness'), 0)]"
+                        },
+                        {
+                            "name": "AZURE_SEARCH_QUERY_TYPE",
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchQueryType'), 'simple')]"
                         },
                         {
                             "name": "AZURE_OPENAI_EMBEDDING_NAME",
