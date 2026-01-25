@@ -363,13 +363,6 @@
                 "description": "Complete image reference including tag (e.g., acrregent.azurecr.io/air-gevo-regent-ui:latest). Registry must be pre-populated with this image."
             }
         },
-        "ExistingACRLoginServer": {
-            "type": "string",
-            "defaultValue": "",
-            "metadata": {
-                "description": "ACR login server URL (e.g., acrregent.azurecr.io). Required when using existing ACR."
-            }
-        },
         "CreateNewACR": {
             "type": "bool",
             "defaultValue": false,
@@ -381,7 +374,8 @@
     "variables": {
         "WebAppImageName": "[if(parameters('UseExistingACR'), concat('DOCKER|', parameters('ExistingACRImageReference')), if(parameters('CreateNewACR'), concat('DOCKER|', reference(resourceId('Microsoft.ContainerRegistry/registries', variables('acrName'))).loginServer, '/air-gevo-regent-ui:latest'), 'DOCKER|sampleappaoaichatgpt.azurecr.io/sample-app-aoai-chatgpt:latest'))]",
         "acrName": "[concat('acr', uniqueString(resourceGroup().id))]",
-        "existingACRName": "[if(parameters('UseExistingACR'), first(split(parameters('ExistingACRLoginServer'), '.')), '')]",
+        "existingACRLoginServer": "[if(parameters('UseExistingACR'), first(split(parameters('ExistingACRImageReference'), '/')), '')]",
+        "existingACRName": "[if(parameters('UseExistingACR'), first(split(variables('existingACRLoginServer'), '.')), '')]",
         "cosmosdb_account_name": "[format('db-{0}', parameters('WebsiteName'))]",
         "cosmosdb_database_name": "db_conversation_history",
         "cosmosdb_container_name": "conversations",

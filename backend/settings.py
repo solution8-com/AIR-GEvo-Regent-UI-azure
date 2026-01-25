@@ -166,8 +166,9 @@ class _AzureOpenAISettings(BaseSettings):
     @model_validator(mode="after")
     def ensure_endpoint(self) -> Self:
         # Skip validation if using n8n as chat provider
-        import os
-        chat_provider = os.environ.get("CHAT_PROVIDER", "aoai")
+        chat_provider = _BaseSettings().chat_provider
+        if isinstance(chat_provider, str):
+            chat_provider = chat_provider.lower()
         if chat_provider == "n8n":
             return self
             
