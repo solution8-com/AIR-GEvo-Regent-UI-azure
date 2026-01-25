@@ -132,12 +132,15 @@
     }
   },
   "variables": {
+    "WebAppImageName": "[if(equals(parameters('ACRDeploymentMode'), 'UseExisting'), concat('DOCKER|', parameters('ExistingACRImageReference')), if(equals(parameters('ACRDeploymentMode'), 'CreateNew'), concat('DOCKER|', variables('acrName'), '.azurecr.io/air-gevo-regent-ui:latest'), 'DOCKER|sampleappaoaichatgpt.azurecr.io/sample-app-aoai-chatgpt:latest'))]",
     "acrName": "[concat('acr', uniqueString(resourceGroup().id))]",
     "existingACRLoginServer": "[if(equals(parameters('ACRDeploymentMode'), 'UseExisting'), first(split(parameters('ExistingACRImageReference'), '/')), '')]",
     "existingACRName": "[if(equals(parameters('ACRDeploymentMode'), 'UseExisting'), first(split(variables('existingACRLoginServer'), '.')), '')]",
     "cosmosdb_account_name": "[format('db-{0}', parameters('WebsiteName'))]",
     "cosmosdb_database_name": "db_conversation_history",
     "cosmosdb_container_name": "conversations",
+    "roleDefinitionId": "00000000-0000-0000-0000-000000000002",
+    "roleAssignmentId": "[guid(variables('roleDefinitionId'), parameters('WebsiteName'), resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosdb_account_name')))]",
     "cosmosDbAccountNameResolved": "[if(parameters('UseExistingCosmosDB'), parameters('ExistingCosmosDBAccountName'), variables('cosmosdb_account_name'))]",
     "cosmosDbResourceGroupResolved": "[if(parameters('UseExistingCosmosDB'), parameters('ExistingCosmosDBResourceGroup'), resourceGroup().name)]"
   },
@@ -177,6 +180,114 @@
               "value": "[reference(resourceId('Microsoft.Insights/components', parameters('ApplicationInsightsName')), '2015-05-01').InstrumentationKey]"
             },
             {
+              "name": "AZURE_SEARCH_SERVICE",
+              "value": "[parameters('AzureSearchService')]"
+            },
+            {
+              "name": "AZURE_SEARCH_INDEX",
+              "value": "[parameters('AzureSearchIndex')]"
+            },
+            {
+              "name": "AZURE_SEARCH_KEY",
+              "value": "[parameters('AzureSearchKey')]"
+            },
+            {
+              "name": "AZURE_SEARCH_USE_SEMANTIC_SEARCH",
+              "value": "[parameters('AzureSearchUseSemanticSearch')]"
+            },
+            {
+              "name": "AZURE_SEARCH_SEMANTIC_SEARCH_CONFIG",
+              "value": "[parameters('AzureSearchSemanticSearchConfig')]"
+            },
+            {
+              "name": "AZURE_SEARCH_INDEX_IS_PRECHUNKED",
+              "value": "[parameters('AzureSearchIndexIsPrechunked')]"
+            },
+            {
+              "name": "AZURE_SEARCH_TOP_K",
+              "value": "[parameters('AzureSearchTopK')]"
+            },
+            {
+              "name": "AZURE_SEARCH_ENABLE_IN_DOMAIN",
+              "value": "[parameters('AzureSearchEnableInDomain')]"
+            },
+            {
+              "name": "AZURE_SEARCH_CONTENT_COLUMNS",
+              "value": "[parameters('AzureSearchContentColumns')]"
+            },
+            {
+              "name": "AZURE_SEARCH_FILENAME_COLUMN",
+              "value": "[parameters('AzureSearchFilenameColumn')]"
+            },
+            {
+              "name": "AZURE_SEARCH_TITLE_COLUMN",
+              "value": "[parameters('AzureSearchTitleColumn')]"
+            },
+            {
+              "name": "AZURE_SEARCH_URL_COLUMN",
+              "value": "[parameters('AzureSearchUrlColumn')]"
+            },
+            {
+              "name": "AZURE_OPENAI_RESOURCE",
+              "value": "[parameters('AzureOpenAIResource')]"
+            },
+            {
+              "name": "AZURE_OPENAI_MODEL",
+              "value": "[parameters('AzureOpenAIModel')]"
+            },
+            {
+              "name": "AZURE_OPENAI_KEY",
+              "value": "[parameters('AzureOpenAIKey')]"
+            },
+            {
+              "name": "AZURE_OPENAI_MODEL_NAME",
+              "value": "[parameters('AzureOpenAIModelName')]"
+            },
+            {
+              "name": "AZURE_OPENAI_TEMPERATURE",
+              "value": "[parameters('AzureOpenAITemperature')]"
+            },
+            {
+              "name": "AZURE_OPENAI_TOP_P",
+              "value": "[parameters('AzureOpenAITopP')]"
+            },
+            {
+              "name": "AZURE_OPENAI_MAX_TOKENS",
+              "value": "[parameters('AzureOpenAIMaxTokens')]"
+            },
+            {
+              "name": "AZURE_OPENAI_STOP_SEQUENCE",
+              "value": "[parameters('AzureOpenAIStopSequence')]"
+            },
+            {
+              "name": "AZURE_OPENAI_SYSTEM_MESSAGE",
+              "value": "[parameters('AzureOpenAISystemMessage')]"
+            },
+            {
+              "name": "AZURE_OPENAI_STREAM",
+              "value": "[parameters('AzureOpenAIStream')]"
+            },
+            {
+              "name": "AZURE_SEARCH_QUERY_TYPE",
+              "value": "[parameters('AzureSearchQueryType')]"
+            },
+            {
+              "name": "AZURE_SEARCH_VECTOR_COLUMNS",
+              "value": "[parameters('AzureSearchVectorFields')]"
+            },
+            {
+              "name": "AZURE_SEARCH_PERMITTED_GROUPS_COLUMN",
+              "value": "[parameters('AzureSearchPermittedGroupsField')]"
+            },
+            {
+              "name": "AZURE_SEARCH_STRICTNESS",
+              "value": "[parameters('AzureSearchStrictness')]"
+            },
+            {
+              "name": "AZURE_OPENAI_EMBEDDING_NAME",
+              "value": "[parameters('AzureOpenAIEmbeddingName')]"
+            },
+            {
               "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
               "value": "true"
             },
@@ -191,6 +302,58 @@
             {
               "name": "AZURE_COSMOSDB_CONVERSATIONS_CONTAINER",
               "value": "[variables('cosmosdb_container_name')]"
+            },
+            {
+              "name": "ELASTICSEARCH_ENDPOINT",
+              "value": "[parameters('ElasticsearchEndpoint')]"
+            },
+            {
+              "name": "ELASTICSEARCH_ENCODED_API_KEY",
+              "value": "[parameters('ElasticsearchEncodedApiKey')]"
+            },
+            {
+              "name": "ELASTICSEARCH_INDEX",
+              "value": "[parameters('ElasticsearchIndex')]"
+            },
+            {
+              "name": "ELASTICSEARCH_QUERY_TYPE",
+              "value": "[parameters('ElasticsearchQueryType')]"
+            },
+            {
+              "name": "ELASTICSEARCH_TOP_K",
+              "value": "[parameters('ElasticsearchTopK')]"
+            },
+            {
+              "name": "ELASTICSEARCH_ENABLE_IN_DOMAIN",
+              "value": "[parameters('ElasticsearchEnableInDomain')]"
+            },
+            {
+              "name": "ELASTICSEARCH_CONTENT_COLUMNS",
+              "value": "[parameters('ElasticsearchContentColumns')]"
+            },
+            {
+              "name": "ELASTICSEARCH_FILENAME_COLUMN",
+              "value": "[parameters('ElasticsearchFilenameColumn')]"
+            },
+            {
+              "name": "ELASTICSEARCH_TITLE_COLUMN",
+              "value": "[parameters('ElasticsearchTitleColumn')]"
+            },
+            {
+              "name": "ELASTICSEARCH_URL_COLUMN",
+              "value": "[parameters('ElasticsearchUrlColumn')]"
+            },
+            {
+              "name": "ELASTICSEARCH_VECTOR_COLUMNS",
+              "value": "[parameters('ElasticsearchVectorColumns')]"
+            },
+            {
+              "name": "ELASTICSEARCH_STRICTNESS",
+              "value": "[parameters('ElasticsearchStrictness')]"
+            },
+            {
+              "name": "ELASTICSEARCH_EMBEDDING_MODEL_ID",
+              "value": "[parameters('ElasticsearchEmbeddingModelId')]"
             },
             {
               "name": "UWSGI_PROCESSES",
