@@ -294,7 +294,7 @@ Note: RBAC assignments can take a few minutes before becoming effective.
     - `AZURE_OPENAI_EMBEDDING_NAME`: the name of your Ada (text-embedding-ada-002) model deployment on your Azure OpenAI resource.
     - `PINECONE_VECTOR_COLUMNS`: the vector columns in your index to use when searching. Join them with `|` like `contentVector|titleVector`.
 
-### Chat with your data using Mongo DB (Private Preview)
+### Chat with your data using MongoDB (Private Preview)
 
 1. Update the `AZURE_OPENAI_*` environment variables as described in the [basic chat experience](#basic-chat-experience) above. 
 
