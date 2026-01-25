@@ -404,7 +404,8 @@
             "type": "Microsoft.Web/sites",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Web/serverfarms', parameters('HostingPlanName'))]"
+                "[resourceId('Microsoft.Web/serverfarms', parameters('HostingPlanName'))]",
+                "[if(equals(parameters('ACRDeploymentMode'), 'CreateNew'), resourceId('Microsoft.ContainerRegistry/registries', variables('acrName')), resourceId('Microsoft.Web/serverfarms', parameters('HostingPlanName')))]"
             ],
             "identity": {
                 "type": "SystemAssigned"
