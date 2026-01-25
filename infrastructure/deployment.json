@@ -87,7 +87,7 @@
             "type": "string",
             "defaultValue": "n8n",
             "metadata": {
-                "description": "Datasource type for grounding. Must match chat provider when using n8n."
+                "description": "Datasource type for grounding. Use 'n8n' for n8n webhook or align with the selected chat provider."
             }
         },
         "N8NWebhookUrl": {
@@ -654,7 +654,7 @@
                         },
                         {
                             "name": "AZURE_SEARCH_QUERY_TYPE",
-                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchQueryType'), '')]"
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchQueryType'), 'simple')]"
                         },
                         {
                             "name": "AZURE_OPENAI_EMBEDDING_NAME",
