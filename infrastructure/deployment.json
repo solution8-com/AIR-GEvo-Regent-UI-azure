@@ -86,6 +86,15 @@
         "DatasourceType": {
             "type": "string",
             "defaultValue": "n8n",
+            "allowedValues": [
+                "n8n",
+                "AzureCognitiveSearch",
+                "AzureCosmosDB",
+                "Elasticsearch",
+                "Pinecone",
+                "MongoDB",
+                "AzureSqlServer"
+            ],
             "metadata": {
                 "description": "Datasource type for grounding. Use 'n8n' for n8n webhook or align with the selected chat provider."
             }
@@ -618,11 +627,11 @@
                         },
                         {
                             "name": "AZURE_OPENAI_TEMPERATURE",
-                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAITemperature'), 0)]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAITemperature'), 0.7)]"
                         },
                         {
                             "name": "AZURE_OPENAI_TOP_P",
-                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAITopP'), 0)]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAITopP'), 1)]"
                         },
                         {
                             "name": "AZURE_OPENAI_MAX_TOKENS",
