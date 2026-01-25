@@ -118,6 +118,20 @@ class _AzureOpenAISettings(BaseSettings):
     logit_bias: Optional[dict] = None
     presence_penalty: Optional[confloat(ge=-2.0, le=2.0)] = 0.0
     frequency_penalty: Optional[confloat(ge=-2.0, le=2.0)] = 0.0
+
+    @model_validator(mode="after")
+    def validate_model_for_aoai(self) -> Self:
+        """Ensure model is provided when using Azure OpenAI chat provider."""
+        chat_provider = _BaseSettings().chat_provider
+        if isinstance(chat_provider, str):
+            chat_provider = chat_provider.lower()
+        
+        if chat_provider == "aoai" and not self.model:
+            raise ValueError(
+                "AZURE_OPENAI_MODEL is required when CHAT_PROVIDER=aoai. "
+                "Please set the Azure OpenAI deployment name/model."
+            )
+        return self
     system_message: str = "You are an AI assistant that helps people find information."
     preview_api_version: str = MINIMUM_SUPPORTED_AZURE_OPENAI_PREVIEW_API_VERSION
     embedding_endpoint: Optional[str] = None
@@ -773,6 +787,22 @@ class _BaseSettings(BaseSettings):
     n8n_webhook_url: Optional[str] = None
     n8n_bearer_token: Optional[str] = None
     n8n_timeout_ms: int = 120000
+
+    @model_validator(mode="after")
+    def validate_n8n_settings(self) -> Self:
+        """Ensure n8n settings are provided when using n8n chat provider."""
+        if self.chat_provider == "n8n":
+            if not self.n8n_webhook_url:
+                raise ValueError(
+                    "N8N_WEBHOOK_URL is required when CHAT_PROVIDER=n8n. "
+                    "Please set the n8n webhook endpoint URL."
+                )
+            if not self.n8n_bearer_token:
+                raise ValueError(
+                    "N8N_BEARER_TOKEN is required when CHAT_PROVIDER=n8n. "
+                    "Please set the bearer token for n8n webhook authentication."
+                )
+        return self
 
 
 class _AppSettings(BaseModel):

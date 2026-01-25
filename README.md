@@ -169,7 +169,7 @@ The application supports using an n8n workflow as an alternate chat backend. Thi
 
     | App Setting | Required? | Default Value | Note |
     | --- | --- | --- | ------------- |
-    |CHAT_PROVIDER|Yes|aoai|Set to `n8n` to enable n8n backend (default: `aoai` for Azure OpenAI)|
+    |CHAT_PROVIDER|No (set to n8n to enable)|aoai|Set to `n8n` to enable n8n backend (default: `aoai` for Azure OpenAI)|
     |N8N_WEBHOOK_URL|Yes (when CHAT_PROVIDER=n8n)||Full n8n webhook endpoint URL (e.g., `https://your-n8n.com/webhook/...`)|
     |N8N_BEARER_TOKEN|Yes (when CHAT_PROVIDER=n8n)||Bearer token for n8n webhook authentication. **Must be kept secret and stored server-side only**.|
     |N8N_TIMEOUT_MS|No|120000|Request timeout in milliseconds (default: 2 minutes)|
