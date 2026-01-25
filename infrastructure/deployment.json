@@ -348,14 +348,44 @@
             "metadata": {
                 "description": "The model ID for a model deployed on Elasticsearch to use for generating embeddings for queries."
             }
+        },
+        "UseExistingACR": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Use existing Azure Container Registry. IMPORTANT: Registry must contain at least one image before deployment."
+            }
+        },
+        "ExistingACRImageReference": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Complete image reference including tag (e.g., acrregent.azurecr.io/air-gevo-regent-ui:latest). Registry must be pre-populated with this image."
+            }
+        },
+        "ExistingACRLoginServer": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "ACR login server URL (e.g., acrregent.azurecr.io). Required when using existing ACR."
+            }
+        },
+        "CreateNewACR": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Create new Azure Container Registry with placeholder image configuration"
+            }
         }
     },
     "variables": {
-        "WebAppImageName": "DOCKER|sampleappaoaichatgpt.azurecr.io/sample-app-aoai-chatgpt:latest",
+        "WebAppImageName": "[if(parameters('UseExistingACR'), concat('DOCKER|', parameters('ExistingACRImageReference')), if(parameters('CreateNewACR'), concat('DOCKER|', reference(resourceId('Microsoft.ContainerRegistry/registries', variables('acrName'))).loginServer, '/air-gevo-regent-ui:latest'), 'DOCKER|sampleappaoaichatgpt.azurecr.io/sample-app-aoai-chatgpt:latest'))]",
+        "acrName": "[concat('acr', uniqueString(resourceGroup().id))]",
+        "existingACRName": "[if(parameters('UseExistingACR'), first(split(parameters('ExistingACRLoginServer'), '.')), '')]",
         "cosmosdb_account_name": "[format('db-{0}', parameters('WebsiteName'))]",
         "cosmosdb_database_name": "db_conversation_history",
         "cosmosdb_container_name": "conversations",
-        "roleDefinitionId": "00000000-0000-0000-0000-000000000002", // Cosmos DB Built-in Data Contributor Role
+        "roleDefinitionId": "00000000-0000-0000-0000-000000000002",
         "roleAssignmentId": "[guid(variables('roleDefinitionId'), parameters('WebsiteName'), resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosdb_account_name')))]"
     },
     "resources": [
@@ -681,6 +711,52 @@
             },
             "dependsOn": [
                 "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosdb_account_name'))]"
+            ]
+        },
+        {
+            "condition": "[parameters('CreateNewACR')]",
+            "type": "Microsoft.ContainerRegistry/registries",
+            "apiVersion": "2023-01-01-preview",
+            "name": "[variables('acrName')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Basic"
+            },
+            "properties": {
+                "adminUserEnabled": false,
+                "anonymousPullEnabled": false
+            },
+            "identity": {
+                "type": "SystemAssigned"
+            }
+        },
+        {
+            "condition": "[parameters('UseExistingACR')]",
+            "type": "Microsoft.ContainerRegistry/registries/providers/roleAssignments",
+            "apiVersion": "2022-04-01",
+            "name": "[concat(variables('existingACRName'), '/Microsoft.Authorization/', guid(parameters('WebsiteName'), parameters('ExistingACRLoginServer'), 'AcrPull'))]",
+            "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')]",
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('WebsiteName')), '2021-02-01', 'Full').identity.principalId]",
+                "principalType": "ServicePrincipal"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('WebsiteName'))]"
+            ]
+        },
+        {
+            "condition": "[parameters('CreateNewACR')]",
+            "type": "Microsoft.ContainerRegistry/registries/providers/roleAssignments",
+            "apiVersion": "2022-04-01",
+            "name": "[concat(variables('acrName'), '/Microsoft.Authorization/', guid(variables('acrName'), parameters('WebsiteName'), 'AcrPull'))]",
+            "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')]",
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('WebsiteName')), '2021-02-01', 'Full').identity.principalId]",
+                "principalType": "ServicePrincipal"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.ContainerRegistry/registries', variables('acrName'))]",
+                "[resourceId('Microsoft.Web/sites', parameters('WebsiteName'))]"
             ]
         }
     ]
