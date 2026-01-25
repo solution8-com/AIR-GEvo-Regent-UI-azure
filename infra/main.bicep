@@ -71,7 +71,7 @@ var tags = { 'azd-env-name': environmentName }
 var openAiResourceGroupNameEffective = !empty(openAiResourceGroupName) ? openAiResourceGroupName : resourceGroup.name
 var searchResourceGroupNameEffective = !empty(searchServiceResourceGroupName) ? searchServiceResourceGroupName : resourceGroup.name
 var cosmosExistingResourceGroupName = !empty(cosmosAccountResourceGroupName) ? cosmosAccountResourceGroupName : resourceGroup.name
-var cosmosDataContributorRoleId = 'b24988ac-6180-42a0-ab88-20f7382dd24c'
+var cosmosDataContributorRoleId = '00000000-0000-0000-0000-000000000002'
 
 // Organize resources in a resource group
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {

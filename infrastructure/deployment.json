@@ -467,7 +467,7 @@
             "apiVersion": "2020-06-01",
             "name": "[parameters('HostingPlanName')]",
             "type": "Microsoft.Web/serverfarms",
-            "location": "[parameters('ContainerRegistryLocation')]",
+            "location": "[resourceGroup().location]",
             "sku": {
                 "name": "[parameters('HostingPlanSku')]"
             },
@@ -693,7 +693,8 @@
                             "value": "[if(parameters('UseExistingContainerRegistry'), parameters('ExistingContainerRegistryPassword'), '')]"
                         }                        
                     ],
-                    "linuxFxVersion": "[variables('WebAppImageName')]"
+                    "linuxFxVersion": "[variables('WebAppImageName')]",
+                    "acrUseManagedIdentityCreds": "[not(parameters('UseExistingContainerRegistry'))]"
                 }
             }
         },
