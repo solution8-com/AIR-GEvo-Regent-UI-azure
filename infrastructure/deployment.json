@@ -654,7 +654,7 @@
                         },
                         {
                             "name": "AZURE_SEARCH_QUERY_TYPE",
-                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchQueryType'), 'simple')]"
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchQueryType'), '')]"
                         },
                         {
                             "name": "AZURE_OPENAI_EMBEDDING_NAME",
