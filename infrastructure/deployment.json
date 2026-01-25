@@ -130,14 +130,16 @@
         },
         "AzureOpenAIResource": {
             "type": "string",
+            "defaultValue": "",
             "metadata": {
-                "description": "Name of Azure OpenAI Resource"
+                "description": "Name of Azure OpenAI Resource (not required when ChatProvider=n8n)"
             }
         },
         "AzureOpenAIModel": {
             "type": "string",
+            "defaultValue": "",
             "metadata": {
-                "description": "Azure OpenAI Model Deployment Name"
+                "description": "Azure OpenAI Model Deployment Name (not required when ChatProvider=n8n)"
             }
         },
         "AzureOpenAIModelName": {
@@ -149,8 +151,9 @@
         },
         "AzureOpenAIKey": {
             "type": "securestring",
+            "defaultValue": "",
             "metadata": {
-                "description": "Azure OpenAI Key"
+                "description": "Azure OpenAI Key (not required when ChatProvider=n8n)"
             }
         },
         "AzureOpenAITemperature": {
@@ -375,27 +378,6 @@
                 "description": "Resource group containing existing ACR (when ACRDeploymentMode=UseExisting)"
             }
         },
-        "DeployOpenAI": {
-            "type": "bool",
-            "defaultValue": true,
-            "metadata": {
-                "description": "Deploy Azure OpenAI service (set false for n8n-only deployments)"
-            }
-        },
-        "DeploySearch": {
-            "type": "bool",
-            "defaultValue": true,
-            "metadata": {
-                "description": "Deploy Azure AI Search service"
-            }
-        },
-        "DeployFormRecognizer": {
-            "type": "bool",
-            "defaultValue": true,
-            "metadata": {
-                "description": "Deploy Form Recognizer service"
-            }
-        },
         "UseExistingCosmosDB": {
             "type": "bool",
             "defaultValue": false,
@@ -612,7 +594,7 @@
                         },
                         {
                             "name": "AZURE_COSMOSDB_ACCOUNT",
-                            "value": "[if(parameters('WebAppEnableChatHistory'), variables('cosmosdb_account_name'), '')]"
+                            "value": "[if(parameters('WebAppEnableChatHistory'), variables('cosmosDbAccountNameResolved'), '')]"
                         },
                         {
                             "name": "AZURE_COSMOSDB_DATABASE",
@@ -718,7 +700,7 @@
             "kind": "web"
         },
         {
-            "condition": "[parameters('WebAppEnableChatHistory')]",
+            "condition": "[and(parameters('WebAppEnableChatHistory'), not(parameters('UseExistingCosmosDB')))]",
             "type": "Microsoft.DocumentDB/databaseAccounts",
             "apiVersion": "2023-04-15",
             "name": "[variables('cosmosdb_account_name')]",
@@ -744,7 +726,7 @@
             }
         },
         {
-            "condition": "[parameters('WebAppEnableChatHistory')]",
+            "condition": "[and(parameters('WebAppEnableChatHistory'), not(parameters('UseExistingCosmosDB')))]",
             "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
             "apiVersion": "2023-04-15",
             "name": "[concat(variables('cosmosdb_account_name'), '/', variables('cosmosdb_database_name'))]",
@@ -758,7 +740,7 @@
             }
         },
         {
-            "condition": "[parameters('WebAppEnableChatHistory')]",
+            "condition": "[and(parameters('WebAppEnableChatHistory'), not(parameters('UseExistingCosmosDB')))]",
             "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
             "apiVersion": "2023-04-15",
             "name": "[concat(variables('cosmosdb_account_name'), '/', variables('cosmosdb_database_name'), '/conversations')]",
@@ -793,7 +775,7 @@
             }
         },
         {
-            "condition": "[parameters('WebAppEnableChatHistory')]",
+            "condition": "[and(parameters('WebAppEnableChatHistory'), not(parameters('UseExistingCosmosDB')))]",
             "type": "Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments",
             "apiVersion": "2021-04-15",
             "name": "[format('{0}/{1}', variables('cosmosdb_account_name'), variables('roleAssignmentId'))]",
@@ -804,6 +786,21 @@
             },
             "dependsOn": [
                 "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosdb_account_name'))]"
+            ]
+        },
+        {
+            "condition": "[and(parameters('WebAppEnableChatHistory'), parameters('UseExistingCosmosDB'))]",
+            "type": "Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments",
+            "apiVersion": "2021-04-15",
+            "name": "[format('{0}/{1}', parameters('ExistingCosmosDBAccountName'), guid(parameters('ExistingCosmosDBAccountName'), parameters('WebsiteName'), 'CosmosDBDataContributor'))]",
+            "scope": "[resourceId(parameters('ExistingCosmosDBResourceGroup'), 'Microsoft.DocumentDB/databaseAccounts', parameters('ExistingCosmosDBAccountName'))]",
+            "properties": {
+                "roleDefinitionId": "[resourceId(parameters('ExistingCosmosDBResourceGroup'), 'Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions', parameters('ExistingCosmosDBAccountName'), '00000000-0000-0000-0000-000000000002')]",
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('WebsiteName')), '2021-02-01', 'Full').identity.principalId]",
+                "scope": "[resourceId(parameters('ExistingCosmosDBResourceGroup'), 'Microsoft.DocumentDB/databaseAccounts', parameters('ExistingCosmosDBAccountName'))]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('WebsiteName'))]"
             ]
         },
         {
