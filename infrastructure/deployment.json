@@ -349,33 +349,34 @@
                 "description": "The model ID for a model deployed on Elasticsearch to use for generating embeddings for queries."
             }
         },
-        "UseExistingACR": {
-            "type": "bool",
-            "defaultValue": false,
+        "ACRDeploymentMode": {
+            "type": "string",
+            "defaultValue": "None",
+            "allowedValues": ["None", "UseExisting", "CreateNew"],
             "metadata": {
-                "description": "Use existing Azure Container Registry. IMPORTANT: Registry must contain at least one image before deployment."
+                "description": "ACR deployment mode: 'None' uses Microsoft sample, 'UseExisting' requires ExistingACRImageReference, 'CreateNew' creates new registry"
             }
         },
         "ExistingACRImageReference": {
             "type": "string",
             "defaultValue": "",
             "metadata": {
-                "description": "Complete image reference including tag (e.g., acrregent.azurecr.io/air-gevo-regent-ui:latest). Registry must be pre-populated with this image."
+                "description": "Required when ACRDeploymentMode=UseExisting. Complete image:tag (e.g., acrregent.azurecr.io/air-gevo-regent-ui:latest). Registry must be pre-populated."
             }
         },
-        "CreateNewACR": {
-            "type": "bool",
-            "defaultValue": false,
+        "ExistingACRResourceGroup": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().name]",
             "metadata": {
-                "description": "Create new Azure Container Registry with placeholder image configuration"
+                "description": "Resource group containing existing ACR (when ACRDeploymentMode=UseExisting)"
             }
         }
     },
     "variables": {
-        "WebAppImageName": "[if(parameters('UseExistingACR'), concat('DOCKER|', parameters('ExistingACRImageReference')), if(parameters('CreateNewACR'), concat('DOCKER|', reference(resourceId('Microsoft.ContainerRegistry/registries', variables('acrName'))).loginServer, '/air-gevo-regent-ui:latest'), 'DOCKER|sampleappaoaichatgpt.azurecr.io/sample-app-aoai-chatgpt:latest'))]",
+        "WebAppImageName": "[if(equals(parameters('ACRDeploymentMode'), 'UseExisting'), concat('DOCKER|', parameters('ExistingACRImageReference')), if(equals(parameters('ACRDeploymentMode'), 'CreateNew'), concat('DOCKER|', variables('acrName'), '.azurecr.io/air-gevo-regent-ui:latest'), 'DOCKER|sampleappaoaichatgpt.azurecr.io/sample-app-aoai-chatgpt:latest'))]",
         "acrName": "[concat('acr', uniqueString(resourceGroup().id))]",
-        "existingACRLoginServer": "[if(parameters('UseExistingACR'), first(split(parameters('ExistingACRImageReference'), '/')), '')]",
-        "existingACRName": "[if(parameters('UseExistingACR'), first(split(variables('existingACRLoginServer'), '.')), '')]",
+        "existingACRLoginServer": "[if(equals(parameters('ACRDeploymentMode'), 'UseExisting'), first(split(parameters('ExistingACRImageReference'), '/')), '')]",
+        "existingACRName": "[if(equals(parameters('ACRDeploymentMode'), 'UseExisting'), first(split(variables('existingACRLoginServer'), '.')), '')]",
         "cosmosdb_account_name": "[format('db-{0}', parameters('WebsiteName'))]",
         "cosmosdb_database_name": "db_conversation_history",
         "cosmosdb_container_name": "conversations",
@@ -709,7 +710,7 @@
             ]
         },
         {
-            "condition": "[parameters('CreateNewACR')]",
+            "condition": "[equals(parameters('ACRDeploymentMode'), 'CreateNew')]",
             "type": "Microsoft.ContainerRegistry/registries",
             "apiVersion": "2023-01-01-preview",
             "name": "[variables('acrName')]",
@@ -726,10 +727,11 @@
             }
         },
         {
-            "condition": "[parameters('UseExistingACR')]",
-            "type": "Microsoft.ContainerRegistry/registries/providers/roleAssignments",
+            "condition": "[equals(parameters('ACRDeploymentMode'), 'UseExisting')]",
+            "type": "Microsoft.Authorization/roleAssignments",
             "apiVersion": "2022-04-01",
-            "name": "[concat(variables('existingACRName'), '/Microsoft.Authorization/', guid(parameters('WebsiteName'), parameters('ExistingACRLoginServer'), 'AcrPull'))]",
+            "name": "[guid(subscription().subscriptionId, parameters('ExistingACRResourceGroup'), variables('existingACRName'), parameters('WebsiteName'), 'AcrPull')]",
+            "scope": "[resourceId(parameters('ExistingACRResourceGroup'), 'Microsoft.ContainerRegistry/registries', variables('existingACRName'))]",
             "properties": {
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')]",
                 "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('WebsiteName')), '2021-02-01', 'Full').identity.principalId]",
@@ -740,7 +742,7 @@
             ]
         },
         {
-            "condition": "[parameters('CreateNewACR')]",
+            "condition": "[equals(parameters('ACRDeploymentMode'), 'CreateNew')]",
             "type": "Microsoft.ContainerRegistry/registries/providers/roleAssignments",
             "apiVersion": "2022-04-01",
             "name": "[concat(variables('acrName'), '/Microsoft.Authorization/', guid(variables('acrName'), parameters('WebsiteName'), 'AcrPull'))]",
