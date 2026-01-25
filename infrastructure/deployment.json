@@ -142,7 +142,7 @@
         },
         "AzureOpenAIModelName": {
             "type": "string",
-            "defaultValue": "gpt-35-turbo",
+            "defaultValue": "gpt-4o-mini",
             "metadata": {
                 "description": "Azure OpenAI Model Name"
             }
@@ -451,6 +451,61 @@
             "metadata": {
                 "description": "The model ID for a model deployed on Elasticsearch to use for generating embeddings for queries."
             }
+        },
+        "ChatProvider": {
+            "type": "string",
+            "defaultValue": "n8n",
+            "allowedValues": [
+                "n8n",
+                "aoai"
+            ],
+            "metadata": {
+                "description": "Chat provider backend: n8n webhook or Azure OpenAI (aoai)"
+            }
+        },
+        "DatasourceType": {
+            "type": "string",
+            "defaultValue": "n8n",
+            "metadata": {
+                "description": "Datasource type for grounding. Must match ChatProvider when using n8n."
+            }
+        },
+        "N8nWebhookUrl": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "n8n webhook URL (required when ChatProvider=n8n). Example: https://your-n8n-instance.com/webhook/chat"
+            }
+        },
+        "N8nBearerToken": {
+            "type": "securestring",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Bearer token for n8n webhook authentication (required when ChatProvider=n8n)"
+            }
+        },
+        "N8nTimeoutMs": {
+            "type": "int",
+            "defaultValue": 15000,
+            "minValue": 1000,
+            "maxValue": 300000,
+            "metadata": {
+                "description": "Timeout for n8n webhook requests in milliseconds (default: 15000 = 15 seconds)"
+            }
+        },
+        "DeployAzureOpenAI": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Set to true to deploy Azure OpenAI resources. Set to false for n8n-only deployments."
+            }
+        },
+        "DeployAzureSearch": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Set to true to deploy Azure AI Search resources. Set to false for n8n-only deployments."
+            }
         }
     },
     "variables": {
@@ -498,111 +553,111 @@
                         },
                         {
                             "name": "AZURE_SEARCH_SERVICE",
-                            "value": "[parameters('AzureSearchService')]"
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchService'), '')]"
                         },
                         {
                             "name": "AZURE_SEARCH_INDEX",
-                            "value": "[parameters('AzureSearchIndex')]"
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchIndex'), '')]"
                         },
                         {
                             "name": "AZURE_SEARCH_KEY",
-                            "value": "[parameters('AzureSearchKey')]"
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchKey'), '')]"
                         },
                         {
                             "name": "AZURE_SEARCH_USE_SEMANTIC_SEARCH",
-                            "value": "[parameters('AzureSearchUseSemanticSearch')]"
+                            "value": "[if(parameters('DeployAzureSearch'), string(parameters('AzureSearchUseSemanticSearch')), 'false')]"
                         },
                         {
                             "name": "AZURE_SEARCH_SEMANTIC_SEARCH_CONFIG",
-                            "value": "[parameters('AzureSearchSemanticSearchConfig')]"
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchSemanticSearchConfig'), '')]"
                         },
                         {
                             "name": "AZURE_SEARCH_INDEX_IS_PRECHUNKED",
-                            "value": "[parameters('AzureSearchIndexIsPrechunked')]"
+                            "value": "[if(parameters('DeployAzureSearch'), string(parameters('AzureSearchIndexIsPrechunked')), 'false')]"
                         },
                         {
                             "name": "AZURE_SEARCH_TOP_K",
-                            "value": "[parameters('AzureSearchTopK')]"
+                            "value": "[if(parameters('DeployAzureSearch'), string(parameters('AzureSearchTopK')), '0')]"
                         },
                         {
                             "name": "AZURE_SEARCH_ENABLE_IN_DOMAIN",
-                            "value": "[parameters('AzureSearchEnableInDomain')]"
+                            "value": "[if(parameters('DeployAzureSearch'), string(parameters('AzureSearchEnableInDomain')), 'false')]"
                         },
                         {
                             "name": "AZURE_SEARCH_CONTENT_COLUMNS",
-                            "value": "[parameters('AzureSearchContentColumns')]"
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchContentColumns'), '')]"
                         },
                         {
                             "name": "AZURE_SEARCH_FILENAME_COLUMN",
-                            "value": "[parameters('AzureSearchFilenameColumn')]"
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchFilenameColumn'), '')]"
                         },
                         {
                             "name": "AZURE_SEARCH_TITLE_COLUMN",
-                            "value": "[parameters('AzureSearchTitleColumn')]"
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchTitleColumn'), '')]"
                         },
                         {
                             "name": "AZURE_SEARCH_URL_COLUMN",
-                            "value": "[parameters('AzureSearchUrlColumn')]"
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchUrlColumn'), '')]"
                         },
                         {
                             "name": "AZURE_OPENAI_RESOURCE",
-                            "value": "[parameters('AzureOpenAIResource')]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAIResource'), '')]"
                         },
                         {
                             "name": "AZURE_OPENAI_MODEL",
-                            "value": "[parameters('AzureOpenAIModel')]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAIModel'), '')]"
                         },
                         {
                             "name": "AZURE_OPENAI_KEY",
-                            "value": "[parameters('AzureOpenAIKey')]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAIKey'), '')]"
                         },
                         {
                             "name": "AZURE_OPENAI_MODEL_NAME",
-                            "value": "[parameters('AzureOpenAIModelName')]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAIModelName'), '')]"
                         },
                         {
                             "name": "AZURE_OPENAI_TEMPERATURE",
-                            "value": "[parameters('AzureOpenAITemperature')]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), string(parameters('AzureOpenAITemperature')), '0')]"
                         },
                         {
                             "name": "AZURE_OPENAI_TOP_P",
-                            "value": "[parameters('AzureOpenAITopP')]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), string(parameters('AzureOpenAITopP')), '0')]"
                         },
                         {
                             "name": "AZURE_OPENAI_MAX_TOKENS",
-                            "value": "[parameters('AzureOpenAIMaxTokens')]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), string(parameters('AzureOpenAIMaxTokens')), '0')]"
                         },
                         {
                             "name": "AZURE_OPENAI_STOP_SEQUENCE",
-                            "value": "[parameters('AzureOpenAIStopSequence')]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAIStopSequence'), '')]"
                         },
                         {
                             "name": "AZURE_OPENAI_SYSTEM_MESSAGE",
-                            "value": "[parameters('AzureOpenAISystemMessage')]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAISystemMessage'), '')]"
                         },
                         {
                             "name": "AZURE_OPENAI_STREAM",
-                            "value": "[parameters('AzureOpenAIStream')]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), string(parameters('AzureOpenAIStream')), 'false')]"
                         },
                         {
                             "name": "AZURE_SEARCH_QUERY_TYPE",
-                            "value": "[parameters('AzureSearchQueryType')]"
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchQueryType'), '')]"
                         },
                         {
                             "name": "AZURE_SEARCH_VECTOR_COLUMNS",
-                            "value": "[parameters('AzureSearchVectorFields')]"
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchVectorFields'), '')]"
                         },
                         {
                             "name": "AZURE_SEARCH_PERMITTED_GROUPS_COLUMN",
-                            "value": "[parameters('AzureSearchPermittedGroupsField')]"
+                            "value": "[if(parameters('DeployAzureSearch'), parameters('AzureSearchPermittedGroupsField'), '')]"
                         },
                         {
                             "name": "AZURE_SEARCH_STRICTNESS",
-                            "value": "[parameters('AzureSearchStrictness')]"
+                            "value": "[if(parameters('DeployAzureSearch'), string(parameters('AzureSearchStrictness')), '0')]"
                         },
                         {
                             "name": "AZURE_OPENAI_EMBEDDING_NAME",
-                            "value": "[parameters('AzureOpenAIEmbeddingName')]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAIEmbeddingName'), '')]"
                         },
                         {
                             "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
@@ -691,7 +746,27 @@
                         {
                             "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
                             "value": "[if(parameters('UseExistingContainerRegistry'), parameters('ExistingContainerRegistryPassword'), '')]"
-                        }                        
+                        },
+                        {
+                            "name": "CHAT_PROVIDER",
+                            "value": "[parameters('ChatProvider')]"
+                        },
+                        {
+                            "name": "DATASOURCE_TYPE",
+                            "value": "[parameters('DatasourceType')]"
+                        },
+                        {
+                            "name": "N8N_WEBHOOK_URL",
+                            "value": "[parameters('N8nWebhookUrl')]"
+                        },
+                        {
+                            "name": "N8N_BEARER_TOKEN",
+                            "value": "[parameters('N8nBearerToken')]"
+                        },
+                        {
+                            "name": "N8N_TIMEOUT_MS",
+                            "value": "[string(parameters('N8nTimeoutMs'))]"
+                        }
                     ],
                     "linuxFxVersion": "[variables('WebAppImageName')]",
                     "acrUseManagedIdentityCreds": "[not(parameters('UseExistingContainerRegistry'))]"
