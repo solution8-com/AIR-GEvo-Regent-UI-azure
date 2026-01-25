@@ -49,7 +49,7 @@ cat .env | jq -R '. | capture("(?<name>[A-Z_]+)=(?<value>.*)")' | jq -s '.[].slo
 Please see [README_azd.md](./README_azd.md) for detailed instructions.
 
 ### One click Azure deployment (n8n-based minified deployment fro Global Evolution)
-[![Deploy the smaller scope to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsolution8-com%2FAIR-GEvo-Regent-UI-azure%2Fcopilot%2Fadd-n8n-webhook-chat-backend%2Finfrastructure%2Fdeployment.json)
+[![Deploy the smaller scope to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsolution8-com%2FAIR-GEvo-Regent-UI-azure%2Fcopilot%2Fadd-n8n-webhook-chat-backend-again%2Finfrastructure%2Fdeployment.json)
 Click on the Deploy to Azure button and configure your settings in the Azure Portal as described in the [Environment variables](#environment-variables) section.
 
 Please see the [section below](#add-an-identity-provider) for important information about adding authentication to your app.
