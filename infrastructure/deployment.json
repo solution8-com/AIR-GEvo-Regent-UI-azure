@@ -142,7 +142,7 @@
         },
         "AzureOpenAIModelName": {
             "type": "string",
-            "defaultValue": "gpt-35-turbo",
+            "defaultValue": "gpt-4o-mini",
             "metadata": {
                 "description": "Azure OpenAI Model Name"
             }
@@ -352,7 +352,11 @@
         "ACRDeploymentMode": {
             "type": "string",
             "defaultValue": "None",
-            "allowedValues": ["None", "UseExisting", "CreateNew"],
+            "allowedValues": [
+                "None",
+                "UseExisting",
+                "CreateNew"
+            ],
             "metadata": {
                 "description": "ACR deployment mode: 'None' uses Microsoft sample, 'UseExisting' requires ExistingACRImageReference, 'CreateNew' creates new registry"
             }
@@ -370,6 +374,80 @@
             "metadata": {
                 "description": "Resource group containing existing ACR (when ACRDeploymentMode=UseExisting)"
             }
+        },
+        "DeployOpenAI": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "Deploy Azure OpenAI service (set false for n8n-only deployments)"
+            }
+        },
+        "DeploySearch": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "Deploy Azure AI Search service"
+            }
+        },
+        "DeployFormRecognizer": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "Deploy Form Recognizer service"
+            }
+        },
+        "UseExistingCosmosDB": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Use existing Cosmos DB from another resource group"
+            }
+        },
+        "ExistingCosmosDBAccountName": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Name of existing Cosmos DB account (when UseExistingCosmosDB=true)"
+            }
+        },
+        "ExistingCosmosDBResourceGroup": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().name]",
+            "metadata": {
+                "description": "Resource group containing existing Cosmos DB"
+            }
+        },
+        "ChatProvider": {
+            "type": "string",
+            "defaultValue": "aoai",
+            "allowedValues": [
+                "aoai",
+                "n8n"
+            ],
+            "metadata": {
+                "description": "Chat backend provider (aoai=Azure OpenAI, n8n=n8n webhook)"
+            }
+        },
+        "N8NWebhookURL": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "N8N webhook URL (required when ChatProvider=n8n)"
+            }
+        },
+        "N8NBearerToken": {
+            "type": "securestring",
+            "defaultValue": "",
+            "metadata": {
+                "description": "N8N bearer token (required when ChatProvider=n8n)"
+            }
+        },
+        "N8NTimeoutMs": {
+            "type": "int",
+            "defaultValue": 30000,
+            "metadata": {
+                "description": "N8N webhook timeout in milliseconds"
+            }
         }
     },
     "variables": {
@@ -381,7 +459,9 @@
         "cosmosdb_database_name": "db_conversation_history",
         "cosmosdb_container_name": "conversations",
         "roleDefinitionId": "00000000-0000-0000-0000-000000000002",
-        "roleAssignmentId": "[guid(variables('roleDefinitionId'), parameters('WebsiteName'), resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosdb_account_name')))]"
+        "roleAssignmentId": "[guid(variables('roleDefinitionId'), parameters('WebsiteName'), resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosdb_account_name')))]",
+        "cosmosDbAccountNameResolved": "[if(parameters('UseExistingCosmosDB'), parameters('ExistingCosmosDBAccountName'), variables('cosmosdb_account_name'))]",
+        "cosmosDbResourceGroupResolved": "[if(parameters('UseExistingCosmosDB'), parameters('ExistingCosmosDBResourceGroup'), resourceGroup().name)]"
     },
     "resources": [
         {
@@ -601,7 +681,23 @@
                         {
                             "name": "UWSGI_THREADS",
                             "value": "2"
-                        }                        
+                        },
+                        {
+                            "name": "CHAT_PROVIDER",
+                            "value": "[parameters('ChatProvider')]"
+                        },
+                        {
+                            "name": "N8N_WEBHOOK_URL",
+                            "value": "[parameters('N8NWebhookURL')]"
+                        },
+                        {
+                            "name": "N8N_BEARER_TOKEN",
+                            "value": "[parameters('N8NBearerToken')]"
+                        },
+                        {
+                            "name": "N8N_TIMEOUT_MS",
+                            "value": "[parameters('N8NTimeoutMs')]"
+                        }
                     ],
                     "linuxFxVersion": "[variables('WebAppImageName')]",
                     "acrUseManagedIdentityCreds": true
