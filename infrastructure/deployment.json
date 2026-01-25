@@ -610,15 +610,15 @@
                         },
                         {
                             "name": "AZURE_COSMOSDB_ACCOUNT",
-                            "value": "[if(parameters('UseExistingCosmosAccount'), parameters('ExistingCosmosAccountName'), if(parameters('WebAppEnableChatHistory'), variables('cosmosdb_account_name'), ''))]"
+                            "value": "[if(parameters('WebAppEnableChatHistory'), if(parameters('UseExistingCosmosAccount'), parameters('ExistingCosmosAccountName'), variables('cosmosdb_account_name')), '')]"
                         },
                         {
                             "name": "AZURE_COSMOSDB_DATABASE",
-                            "value": "[variables('cosmosdb_database_name')]"
+                            "value": "[if(parameters('WebAppEnableChatHistory'), variables('cosmosdb_database_name'), '')]"
                         },
                         {
                             "name": "AZURE_COSMOSDB_CONVERSATIONS_CONTAINER",
-                            "value": "[variables('cosmosdb_container_name')]"
+                            "value": "[if(parameters('WebAppEnableChatHistory'), variables('cosmosdb_container_name'), '')]"
                         },
                         {
                             "name": "ELASTICSEARCH_ENDPOINT",
