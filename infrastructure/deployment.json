@@ -251,6 +251,74 @@
                 "description": "Enable chat history by deploying a Cosmos DB instance"
             }
         },
+        "UseContainerRegistry": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Deploy or use an Azure Container Registry for the web app image"
+            }
+        },
+        "UseExistingContainerRegistry": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Use an existing Azure Container Registry instead of creating a new one"
+            }
+        },
+        "ContainerRegistryName": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Name of the Azure Container Registry to create or use"
+            }
+        },
+        "ContainerRegistrySku": {
+            "type": "string",
+            "defaultValue": "Basic",
+            "allowedValues": [
+                "Basic",
+                "Standard",
+                "Premium"
+            ],
+            "metadata": {
+                "description": "SKU for the Azure Container Registry"
+            }
+        },
+        "ContainerImageName": {
+            "type": "string",
+            "defaultValue": "air-gevo-regent-ui-azure",
+            "metadata": {
+                "description": "Container image name pushed to the registry"
+            }
+        },
+        "ContainerImageTag": {
+            "type": "string",
+            "defaultValue": "latest",
+            "metadata": {
+                "description": "Container image tag"
+            }
+        },
+        "ExistingContainerRegistryLoginServer": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Login server for an existing Azure Container Registry"
+            }
+        },
+        "ExistingContainerRegistryUsername": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Username for an existing Azure Container Registry"
+            }
+        },
+        "ExistingContainerRegistryPassword": {
+            "type": "securestring",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Password for an existing Azure Container Registry"
+            }
+        },
         "UseExistingCosmosAccount": {
             "type": "bool",
             "defaultValue": false,
@@ -372,7 +440,7 @@
         }
     },
     "variables": {
-        "WebAppImageName": "DOCKER|sampleappaoaichatgpt.azurecr.io/sample-app-aoai-chatgpt:latest",
+        "WebAppImageName": "[if(parameters('UseContainerRegistry'), format('DOCKER|{0}/{1}:{2}', if(parameters('UseExistingContainerRegistry'), parameters('ExistingContainerRegistryLoginServer'), concat(parameters('ContainerRegistryName'), '.azurecr.io')), parameters('ContainerImageName'), parameters('ContainerImageTag')), 'DOCKER|sampleappaoaichatgpt.azurecr.io/sample-app-aoai-chatgpt:latest')]",
         "cosmosdb_account_name": "[format('db-{0}', parameters('WebsiteName'))]",
         "cosmosdb_database_name": "db_conversation_history",
         "cosmosdb_container_name": "conversations",
@@ -596,6 +664,18 @@
                         {
                             "name": "UWSGI_THREADS",
                             "value": "2"
+                        },
+                        {
+                            "name": "DOCKER_REGISTRY_SERVER_URL",
+                            "value": "[if(parameters('UseContainerRegistry'), concat('https://', if(parameters('UseExistingContainerRegistry'), parameters('ExistingContainerRegistryLoginServer'), concat(parameters('ContainerRegistryName'), '.azurecr.io'))), '')]"
+                        },
+                        {
+                            "name": "DOCKER_REGISTRY_SERVER_USERNAME",
+                            "value": "[if(parameters('UseContainerRegistry'), if(parameters('UseExistingContainerRegistry'), parameters('ExistingContainerRegistryUsername'), ''), '')]"
+                        },
+                        {
+                            "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
+                            "value": "[if(parameters('UseContainerRegistry'), if(parameters('UseExistingContainerRegistry'), parameters('ExistingContainerRegistryPassword'), ''), '')]"
                         }                        
                     ],
                     "linuxFxVersion": "[variables('WebAppImageName')]"
@@ -614,6 +694,20 @@
                 "Application_Type": "web"
             },
             "kind": "web"
+        },
+        {
+            "condition": "[and(parameters('UseContainerRegistry'), not(parameters('UseExistingContainerRegistry')))]",
+            "type": "Microsoft.ContainerRegistry/registries",
+            "apiVersion": "2023-07-01",
+            "name": "[parameters('ContainerRegistryName')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[parameters('ContainerRegistrySku')]"
+            },
+            "properties": {
+                "adminUserEnabled": true
+            },
+            "dependsOn": []
         },
         {
             "condition": "[and(parameters('WebAppEnableChatHistory'), not(parameters('UseExistingCosmosAccount')))]",
