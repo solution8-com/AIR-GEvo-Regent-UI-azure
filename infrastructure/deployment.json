@@ -219,15 +219,15 @@
             }
         },
         "AzureOpenAITemperature": {
-            "type": "int",
-            "defaultValue": 0,
+            "type": "number",
+            "defaultValue": 0.0,
             "metadata": {
                 "description": "Azure OpenAI Temperature"
             }
         },
         "AzureOpenAITopP": {
-            "type": "int",
-            "defaultValue": 1,
+            "type": "number",
+            "defaultValue": 1.0,
             "metadata": {
                 "description": "Azure OpenAI Top P"
             }
@@ -627,15 +627,15 @@
                         },
                         {
                             "name": "AZURE_OPENAI_TEMPERATURE",
-                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAITemperature'), 0.7)]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAITemperature'), 0.0)]"
                         },
                         {
                             "name": "AZURE_OPENAI_TOP_P",
-                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAITopP'), 1)]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAITopP'), 1.0)]"
                         },
                         {
                             "name": "AZURE_OPENAI_MAX_TOKENS",
-                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAIMaxTokens'), 0)]"
+                            "value": "[if(parameters('DeployAzureOpenAI'), parameters('AzureOpenAIMaxTokens'), 1000)]"
                         },
                         {
                             "name": "AZURE_OPENAI_STOP_SEQUENCE",
