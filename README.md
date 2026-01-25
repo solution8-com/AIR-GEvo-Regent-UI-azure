@@ -612,7 +612,7 @@ azd up
 | `CHAT_PROVIDER` | No | `aoai` | Set to `n8n` to enable n8n backend |
 | `N8N_WEBHOOK_URL` | Yes* | - | Full URL to your n8n webhook endpoint |
 | `N8N_BEARER_TOKEN` | Yes* | - | Bearer token for webhook authentication |
-| `N8N_TIMEOUT_MS` | No | `300000` | Request timeout in milliseconds |
+| `N8N_TIMEOUT_MS` | No | `120000` | Request timeout in milliseconds |
 
 *Required when `CHAT_PROVIDER=n8n`
 
