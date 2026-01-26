@@ -3,6 +3,7 @@ import json
 import logging
 import requests
 import dataclasses
+import time
 
 from typing import List
 
@@ -105,6 +106,19 @@ def format_non_streaming_response(chatCompletion, history_metadata, apim_request
             return response_obj
 
     return {}
+
+
+def format_n8n_response(content: str, history_metadata: dict, message_id: str):
+    response_obj = {
+        "id": message_id,
+        "model": "n8n",
+        "created": int(time.time()),
+        "object": "chat.completion.chunk",
+        "choices": [{"messages": [{"role": "assistant", "content": content}]}],
+        "history_metadata": history_metadata,
+        "apim-request-id": "n8n",
+    }
+    return response_obj
 
 def format_stream_response(chatCompletionChunk, history_metadata, apim_request_id):
     response_obj = {
@@ -229,4 +243,3 @@ def comma_separated_string_to_list(s: str) -> List[str]:
     Split comma-separated values into a list.
     '''
     return s.strip().replace(' ', '').split(',')
-
