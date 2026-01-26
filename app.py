@@ -1156,25 +1156,34 @@ async def ensure_cosmos():
 
 async def generate_title(conversation_messages) -> str:
     ## make sure the messages are sorted by _ts descending
-    title_prompt = "Summarize the conversation so far into a 4-word or less title. Do not use any quotation marks or punctuation. Do not include any other commentary or description."
+    if _get_chat_provider() == "n8n":
+        # Return first few words of the user message as title
+        for msg in reversed(conversation_messages):
+            if msg.get("role") == "user":
+                content = msg.get("content", "")
+                if isinstance(content, str):
+                    words = content.split()[:4]
+                    return " ".join(words) if words else "New Conversation"
+        return "New Conversation"
+    # title_prompt = "Summarize the conversation so far into a 4-word or less title. Do not use any quotation marks or punctuation. Do not include any other commentary or description."
 
-    messages = [
-        {"role": msg["role"], "content": msg["content"]}
-        for msg in conversation_messages
-    ]
-    messages.append({"role": "user", "content": title_prompt})
+    # messages = [
+    #     {"role": msg["role"], "content": msg["content"]}
+    #     for msg in conversation_messages
+    # ]
+    # messages.append({"role": "user", "content": title_prompt})
 
-    try:
-        azure_openai_client = await init_openai_client()
-        response = await azure_openai_client.chat.completions.create(
-            model=app_settings.azure_openai.model, messages=messages, temperature=1, max_tokens=64
-        )
+    # try:
+    #     azure_openai_client = await init_openai_client()
+    #     response = await azure_openai_client.chat.completions.create(
+    #         model=app_settings.azure_openai.model, messages=messages, temperature=1, max_tokens=64
+    #     )
 
-        title = response.choices[0].message.content
-        return title
-    except Exception as e:
-        logging.exception("Exception while generating title", e)
-        return messages[-2]["content"]
+    #     title = response.choices[0].message.content
+    #     return title
+    # except Exception as e:
+    #     logging.exception("Exception while generating title", e)
+    #     return messages[-2]["content"]
 
 
 app = create_app()
