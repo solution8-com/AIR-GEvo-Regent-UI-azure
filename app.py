@@ -118,6 +118,15 @@ azure_openai_available_tools = []
 async def init_openai_client():
     azure_openai_client = None
     
+    # Only initialize Azure OpenAI client if needed
+    if not app_settings.azure_openai:
+        logging.info(f"Skipping Azure OpenAI client initialization (CHAT_PROVIDER={app_settings.base_settings.chat_provider}, no Azure OpenAI settings)")
+        return None
+    
+    if app_settings.base_settings.chat_provider == "n8n" and not app_settings.datasource:
+        logging.info(f"Skipping Azure OpenAI client initialization (CHAT_PROVIDER={app_settings.base_settings.chat_provider}, no datasource requiring embeddings)")
+        return None
+    
     try:
         # API version check
         if (
@@ -191,7 +200,7 @@ async def init_openai_client():
         raise e
 
 async def openai_remote_azure_function_call(function_name, function_args):
-    if app_settings.azure_openai.function_call_azure_functions_enabled is not True:
+    if not app_settings.azure_openai or app_settings.azure_openai.function_call_azure_functions_enabled is not True:
         return
 
     azure_functions_tool_url = f"{app_settings.azure_openai.function_call_azure_functions_tool_base_url}?code={app_settings.azure_openai.function_call_azure_functions_tool_key}"
@@ -239,6 +248,14 @@ async def init_cosmosdb_client():
 
 
 def prepare_model_args(request_body, request_headers):
+    # This function should only be called when using Azure OpenAI provider
+    # Caller should check app_settings.base_settings.chat_provider == "azure_openai" before calling
+    if not app_settings.azure_openai:
+        raise ValueError(
+            "Azure OpenAI settings are required for prepare_model_args. "
+            "This function should only be called when chat_provider is 'azure_openai'."
+        )
+    
     request_messages = request_body.get("messages", [])
     messages = []
     if not app_settings.datasource:
@@ -536,7 +553,7 @@ async def stream_chat_request(request_body, request_headers):
     history_metadata = request_body.get("history_metadata", {})
     
     async def generate(apim_request_id, history_metadata):
-        if app_settings.azure_openai.function_call_azure_functions_enabled:
+        if app_settings.azure_openai and app_settings.azure_openai.function_call_azure_functions_enabled:
             # Maintain state during function call streaming
             function_call_stream_state = AzureOpenaiFunctionCallStreamState()
             
@@ -564,7 +581,7 @@ async def stream_chat_request(request_body, request_headers):
 
 async def conversation_internal(request_body, request_headers):
     try:
-        if app_settings.azure_openai.stream and not app_settings.base_settings.use_promptflow:
+        if app_settings.azure_openai and app_settings.azure_openai.stream and not app_settings.base_settings.use_promptflow:
             result = await stream_chat_request(request_body, request_headers)
             response = await make_response(format_as_ndjson(result))
             response.timeout = None

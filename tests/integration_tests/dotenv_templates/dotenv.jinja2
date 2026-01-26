@@ -1,10 +1,35 @@
+{% if CHAT_PROVIDER is defined and CHAT_PROVIDER == "n8n" %}
+{# n8n provider - Azure OpenAI not required unless datasource uses embeddings #}
+CHAT_PROVIDER=n8n
+N8N_WEBHOOK_URL={{ N8N_WEBHOOK_URL }}
+N8N_BEARER_TOKEN={{ N8N_BEARER_TOKEN }}
+
+{% if DATASOURCE_TYPE is defined and DATASOURCE_TYPE != "none" %}
+{# Datasource requires embeddings, so include Azure OpenAI settings #}
 DATASOURCE_TYPE={{ DATASOURCE_TYPE }}
 AZURE_OPENAI_ENDPOINT={{ AZURE_OPENAI_ENDPOINT }}
 AZURE_OPENAI_MODEL={{ AZURE_OPENAI_MODEL }}
 {% if not USE_MI %}
 AZURE_OPENAI_KEY={{ AZURE_OPENAI_KEY }}
 {% endif %}
+{% endif %}
 
+{% else %}
+{# Default: Azure OpenAI provider #}
+DATASOURCE_TYPE={{ DATASOURCE_TYPE }}
+AZURE_OPENAI_ENDPOINT={{ AZURE_OPENAI_ENDPOINT }}
+AZURE_OPENAI_MODEL={{ AZURE_OPENAI_MODEL }}
+{% if not USE_MI %}
+AZURE_OPENAI_KEY={{ AZURE_OPENAI_KEY }}
+{% endif %}
+{% endif %}
+
+{% if CHAT_PROVIDER is not defined or CHAT_PROVIDER != "n8n" or (DATASOURCE_TYPE is defined and DATASOURCE_TYPE != "none") %}
+{# Only configure Azure OpenAI settings if:
+   - CHAT_PROVIDER is not set (default to azure_openai), OR
+   - CHAT_PROVIDER is azure_openai, OR  
+   - CHAT_PROVIDER is n8n BUT a datasource is configured (needs embeddings)
+#}
 {% set TEMP_DEFAULT = 0.7 %}
 {% set TOP_P_DEFAULT = 0.9 %}
 
@@ -38,16 +63,13 @@ AZURE_OPENAI_EMBEDDING_ENDPOINT={{ AZURE_OPENAI_ENDPOINT }}/openai/deployments/a
 AZURE_OPENAI_EMBEDDING_KEY={{ AZURE_OPENAI_KEY }}
 {% endif %}
 {% endif %}
+{% endif %}
 {% if ENABLE_CHAT_HISTORY %}
 AZURE_COSMOSDB_ACCOUNT={{ AZURE_COSMOSDB_ACCOUNT }}
 AZURE_COSMOSDB_DATABASE={{ AZURE_COSMOSDB_DATABASE }}
 AZURE_COSMOSDB_CONVERSATIONS_CONTAINER={{ AZURE_COSMOSDB_CONVERSATIONS_CONTAINER }}
 AZURE_COSMOSDB_ACCOUNT_KEY={{ AZURE_COSMOSDB_ACCOUNT_KEY }}
 AZURE_COSMOSDB_ENABLE_FEEDBACK={{ AZURE_COSMOSDB_ENABLE_FEEDBACK }}
-{% endif %}
-{% if DATASOURCE_TYPE == "n8n" %}
-N8N_WEBHOOK_URL={{ N8N_WEBHOOK_URL }}
-N8N_BEARER_TOKEN={{ N8N_BEARER_TOKEN }}
 {% endif %}
 {% if DATASOURCE_TYPE == "AzureCognitiveSearch" %}
 AZURE_SEARCH_SERVICE={{ AZURE_SEARCH_SERVICE }}
