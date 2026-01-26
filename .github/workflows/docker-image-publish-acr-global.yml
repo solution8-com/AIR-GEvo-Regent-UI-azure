@@ -16,20 +16,29 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      
     steps:
       - uses: actions/checkout@v4
 
       - name: Azure login (service principal secret, now updated to 781ed... )
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS_GLOBAL }}
+          # creds: ${{ secrets.AZURE_CREDENTIALS_GLOBAL }}
+          creds: ${{ secrets.AZURE_CREDENTIALS_GLOBAL_FEDERATED }}
 
-      - name: Login Docker to ACR (token-based; no ACR admin)
+  #    - name: Login Docker to ACR (token-based; no ACR admin)
+  #      run: |
+          # TOKEN=$(az acr login --name acrregenttest --expose-token --output tsv --query accessToken)
+          # echo "$TOKEN" | docker login acrregenttest.azurecr.io \
+          #   --username 00000000-0000-0000-0000-000000000000 \
+          #   --password-stdin
+
+      - name: Login Docker to ACR (OIDC-backed)
         run: |
-          TOKEN=$(az acr login --name acrregenttest --expose-token --output tsv --query accessToken)
-          echo "$TOKEN" | docker login acrregenttest.azurecr.io \
-            --username 00000000-0000-0000-0000-000000000000 \
-            --password-stdin
+          az acr login --name acrregenttest
 
       # - name: Build + push (tag = commit SHA)
       #   run: |
