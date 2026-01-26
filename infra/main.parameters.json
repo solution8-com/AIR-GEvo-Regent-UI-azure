@@ -43,6 +43,30 @@
     },
     "authClientSecret": {
       "value": "${AUTH_CLIENT_SECRET}"
+    },
+    "deployOpenAI": {
+      "value": "${DEPLOY_OPENAI=true}"
+    },
+    "deploySearch": {
+      "value": "${DEPLOY_SEARCH=true}"
+    },
+    "deployFormRecognizer": {
+      "value": "${DEPLOY_FORM_RECOGNIZER=true}"
+    },
+    "useExistingCosmosDb": {
+      "value": "${USE_EXISTING_COSMOSDB=false}"
+    },
+    "existingCosmosDbAccountName": {
+      "value": "${EXISTING_COSMOSDB_ACCOUNT_NAME=}"
+    },
+    "existingCosmosDbResourceGroup": {
+      "value": "${EXISTING_COSMOSDB_RESOURCE_GROUP=}"
+    },
+    "existingCosmosDbDatabaseName": {
+      "value": "${EXISTING_COSMOSDB_DATABASE_NAME=db_conversation_history}"
+    },
+    "existingCosmosDbContainerName": {
+      "value": "${EXISTING_COSMOSDB_CONTAINER_NAME=conversations}"
     }
   }
 }

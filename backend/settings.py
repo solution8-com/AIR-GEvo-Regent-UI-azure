@@ -101,7 +101,7 @@ class _AzureOpenAISettings(BaseSettings):
         env_ignore_empty=True
     )
     
-    model: str
+    model: Optional[str] = None
     key: Optional[str] = None
     resource: Optional[str] = None
     endpoint: Optional[str] = None
@@ -162,17 +162,6 @@ class _AzureOpenAISettings(BaseSettings):
             return parse_multi_columns(comma_separated_string)
         
         return None
-    
-    @model_validator(mode="after")
-    def ensure_endpoint(self) -> Self:
-        if self.endpoint:
-            return Self
-        
-        elif self.resource:
-            self.endpoint = f"https://{self.resource}.openai.azure.com"
-            return Self
-        
-        raise ValidationError("AZURE_OPENAI_ENDPOINT or AZURE_OPENAI_RESOURCE is required")
         
     def extract_embedding_dependency(self) -> Optional[dict]:
         if self.embedding_name:
@@ -761,6 +750,27 @@ class _BaseSettings(BaseSettings):
     auth_enabled: bool = True
     sanitize_answer: bool = False
     use_promptflow: bool = False
+    # Chat provider settings
+    chat_provider: Literal["aoai", "n8n"] = "aoai"
+    n8n_webhook_url: Optional[str] = None
+    n8n_bearer_token: Optional[str] = None
+    n8n_timeout_ms: int = 120000
+
+    @model_validator(mode="after")
+    def validate_n8n_settings(self) -> Self:
+        """Ensure n8n settings are provided when using n8n chat provider."""
+        if self.chat_provider == "n8n":
+            if not self.n8n_webhook_url:
+                raise ValueError(
+                    "N8N_WEBHOOK_URL is required when CHAT_PROVIDER=n8n. "
+                    "Please set the n8n webhook endpoint URL."
+                )
+            if not self.n8n_bearer_token:
+                raise ValueError(
+                    "N8N_BEARER_TOKEN is required when CHAT_PROVIDER=n8n. "
+                    "Please set the bearer token for n8n webhook authentication."
+                )
+        return self
 
 
 class _AppSettings(BaseModel):
@@ -834,6 +844,30 @@ class _AppSettings(BaseModel):
         except ValidationError as e:
             logging.warning("No datasource configuration found in the environment -- calls will be made to Azure OpenAI without grounding data.")
             logging.warning(e.errors())
+    
+    @model_validator(mode="after")
+    def validate_azure_openai_for_aoai_mode(self) -> Self:
+        """Validate Azure OpenAI settings when using aoai chat provider."""
+        if self.base_settings.chat_provider == "n8n":
+            # Skip Azure OpenAI validation for n8n mode
+            return self
+        
+        # Validate model field is set for AOAI mode
+        if not self.azure_openai.model:
+            raise ValueError(
+                "AZURE_OPENAI_MODEL is required when CHAT_PROVIDER=aoai. "
+                "Please set the Azure OpenAI deployment name/model."
+            )
+        
+        # Validate endpoint configuration
+        if not self.azure_openai.endpoint:
+            if self.azure_openai.resource:
+                # Auto-configure endpoint from resource name
+                self.azure_openai.endpoint = f"https://{self.azure_openai.resource}.openai.azure.com"
+            else:
+                raise ValueError("AZURE_OPENAI_ENDPOINT or AZURE_OPENAI_RESOURCE is required")
+        
+        return self
 
 
 app_settings = _AppSettings()

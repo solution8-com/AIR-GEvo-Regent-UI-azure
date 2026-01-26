@@ -48,9 +48,8 @@ cat .env | jq -R '. | capture("(?<name>[A-Z_]+)=(?<value>.*)")' | jq -s '.[].slo
 ### Deploy with Azure Developer CLI
 Please see [README_azd.md](./README_azd.md) for detailed instructions.
 
-### One click Azure deployment
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fsample-app-aoai-chatGPT%2Fmain%2Finfrastructure%2Fdeployment.json)
-
+### One click Azure deployment (n8n-based minified deployment fro Global Evolution)
+[![Deploy the smaller scope to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsolution8-com%2FAIR-GEvo-Regent-UI-azure%2Fcopilot%2Fadd-n8n-webhook-chat-backend-again%2Finfrastructure%2Fdeployment.json)
 Click on the Deploy to Azure button and configure your settings in the Azure Portal as described in the [Environment variables](#environment-variables) section.
 
 Please see the [section below](#add-an-identity-provider) for important information about adding authentication to your app.
@@ -161,13 +160,44 @@ Note: RBAC assignments can take a few minutes before becoming effective.
 
 #### Chat with your data
 
-#### Chat with your data using n8n backend (<SECTION NEEDS HEPL>)
+#### Chat with your data using n8n backend
 
-1. Configure data source settings as described in the table below.
+The application supports using an n8n workflow as an alternate chat backend. This allows you to integrate custom RAG pipelines, AI agents, or other n8n-based chat workflows while maintaining the existing UI and Microsoft Entra ID authentication.
+
+1. Configure the chat provider and n8n settings as described in the table below.
 
     | App Setting | Required? | Default Value | Note |
     | --- | --- | --- | ------------- |
-    |DATASOURCE_TYPE|Yes||Must be set to `n8n`|
+    |CHAT_PROVIDER|No (set to n8n to enable)|aoai|Set to `n8n` to enable n8n backend (default: `aoai` for Azure OpenAI)|
+    |N8N_WEBHOOK_URL|Yes (when CHAT_PROVIDER=n8n)||Full n8n webhook endpoint URL (e.g., `https://your-n8n.com/webhook/...`)|
+    |N8N_BEARER_TOKEN|Yes (when CHAT_PROVIDER=n8n)||Bearer token for n8n webhook authentication. **Must be kept secret and stored server-side only**.|
+    |N8N_TIMEOUT_MS|No|120000|Request timeout in milliseconds (default: 2 minutes)|
+
+2. Your n8n workflow must accept POST requests with this JSON structure:
+    ```json
+    {
+      "chatInput": "User message text",
+      "sessionId": "Unique session identifier"
+    }
+    ```
+
+3. The workflow must return a JSON response containing the assistant message. Supported response fields: `message`, `output`, `response`, or `text`.
+
+4. **Important:** Microsoft Entra ID authentication remains mandatory. The n8n webhook is called server-to-server only. The bearer token is never exposed to the browser.
+
+5. **Session Management:** The backend automatically manages `sessionId` for conversation continuity. Same conversation uses same sessionId; new chat gets new sessionId.
+
+6. For detailed setup instructions, testing, and troubleshooting, see [`next-steps.md`](./next-steps.md).
+
+#### Example n8n Workflow Requirements
+
+Your n8n workflow should follow this general structure:
+- **Webhook Node**: Accepts POST requests with authentication
+- **Edit Fields Node**: Extracts `chatInput` and `sessionId` from the request
+- **Chat/RAG Node**: Processes the message (can include memory, RAG, or AI agent logic)
+- **Respond to Webhook Node**: Returns the response
+
+The workflow can include memory components (e.g., Postgres Chat Memory) that use `sessionId` to maintain conversation context across turns.
 
 #### Chat with your data using Azure Cognitive Search
 
@@ -556,3 +586,41 @@ This project may contain trademarks or logos for projects, products, or services
 trademarks or logos is subject to and must follow [Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general).
 Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
 Any use of third-party trademarks or logos are subject to those third-party's policies.
+
+## n8n Webhook Integration
+
+This application supports n8n workflows as an alternate chat backend. See [DEPLOYMENT-N8N.md](./DEPLOYMENT-N8N.md) for complete deployment instructions.
+
+### Quick Start with n8n
+
+```bash
+# Minimal deployment (App Service + Cosmos DB only)
+azd env set DEPLOY_OPENAI false
+azd env set DEPLOY_SEARCH false
+azd env set DEPLOY_FORM_RECOGNIZER false
+azd env set CHAT_PROVIDER n8n
+azd env set N8N_WEBHOOK_URL "https://your-n8n-instance.com/webhook/your-webhook-id"
+azd env set N8N_BEARER_TOKEN "your-secret-bearer-token"
+azd up
+```
+
+### n8n Configuration Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `CHAT_PROVIDER` | No | `aoai` | Set to `n8n` to enable n8n backend |
+| `N8N_WEBHOOK_URL` | Yes* | - | Full URL to your n8n webhook endpoint |
+| `N8N_BEARER_TOKEN` | Yes* | - | Bearer token for webhook authentication |
+| `N8N_TIMEOUT_MS` | No | `120000` | Request timeout in milliseconds |
+
+*Required when `CHAT_PROVIDER=n8n`
+
+### Benefits of n8n Deployment
+
+- **Cost Savings**: ~90% reduction (~$38/month vs ~$400/month full deployment)
+- **Custom RAG Pipelines**: Use n8n's visual workflow builder
+- **Flexible AI Agents**: Connect to any LLM or custom logic
+- **Conversation Memory**: Built-in Postgres memory in n8n workflows
+- **Same Authentication**: Entra ID login remains mandatory
+
+For detailed deployment scenarios, troubleshooting, and security considerations, see [DEPLOYMENT-N8N.md](./DEPLOYMENT-N8N.md).
