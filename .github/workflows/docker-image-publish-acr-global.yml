@@ -41,6 +41,10 @@ jobs:
       - name: Login Docker to ACR (OIDC-backed)
         run: |
           ACR_NAME=$(echo "$ACR_LOGIN_SERVER" | cut -d'.' -f1)
+          if [ -z "$ACR_NAME" ]; then
+            echo "Error: Could not extract ACR name from ACR_LOGIN_SERVER ($ACR_LOGIN_SERVER)"
+            exit 1
+          fi
           az acr login --name "$ACR_NAME"
 
       # - name: Build + push (tag = commit SHA)
