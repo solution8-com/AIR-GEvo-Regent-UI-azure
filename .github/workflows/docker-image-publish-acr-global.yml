@@ -29,6 +29,7 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID_GLOBAL }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID_GLOBAL }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID_GLOBAL }}
+          auth-type: federated
 
   #    - name: Login Docker to ACR (token-based; no ACR admin)
   #      run: |
