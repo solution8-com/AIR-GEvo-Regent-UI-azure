@@ -1,0 +1,140 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/uiDefinition.json#",
+    "handler": "Microsoft.Compute.MultiVm",
+    "version": "1.0.0",
+    "parameters": {
+        "basics": [
+            {
+                "name": "resourceGroup",
+                "type": "Microsoft.Common.ResourceGroup"
+            },
+            {
+                "name": "location",
+                "type": "Microsoft.Common.Location"
+            }
+        ],
+        "steps": [
+            {
+                "name": "datasourceStep",
+                "label": "Datasource",
+                "elements": [
+                    {
+                        "name": "datasourceType",
+                        "type": "Microsoft.Common.DropDown",
+                        "label": "Datasource type",
+                        "defaultValue": "AzureCognitiveSearch",
+                        "constraints": {
+                            "allowedValues": [
+                                {
+                                    "label": "Azure Cognitive Search",
+                                    "value": "AzureCognitiveSearch"
+                                },
+                                {
+                                    "label": "N8N",
+                                    "value": "N8N"
+                                }
+                            ],
+                            "required": true
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "n8nStep",
+                "label": "N8N Settings",
+                "condition": "[equals(steps('datasourceStep').datasourceType, 'N8N')]",
+                "elements": [
+                    {
+                        "name": "n8nWebhookUrl",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "N8N Webhook URL",
+                        "constraints": {
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "n8nBearerToken",
+                        "type": "Microsoft.Common.PasswordBox",
+                        "label": "N8N Bearer Token",
+                        "constraints": {
+                            "required": true
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "azureSearchStep",
+                "label": "Azure Cognitive Search",
+                "condition": "[equals(steps('datasourceStep').datasourceType, 'AzureCognitiveSearch')]",
+                "elements": [
+                    {
+                        "name": "azureSearchService",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "Azure Search Service",
+                        "constraints": {
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "azureSearchIndex",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "Azure Search Index",
+                        "constraints": {
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "azureSearchKey",
+                        "type": "Microsoft.Common.PasswordBox",
+                        "label": "Azure Search Admin Key",
+                        "constraints": {
+                            "required": true
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "openAiStep",
+                "label": "Azure OpenAI",
+                "elements": [
+                    {
+                        "name": "azureOpenAiResource",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "Azure OpenAI Resource Name",
+                        "constraints": {
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "azureOpenAiModel",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "Azure OpenAI Model Deployment Name",
+                        "constraints": {
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "azureOpenAiKey",
+                        "type": "Microsoft.Common.PasswordBox",
+                        "label": "Azure OpenAI Key",
+                        "constraints": {
+                            "required": true
+                        }
+                    }
+                ]
+            }
+        ],
+        "outputs": {
+            "location": "[basics('location')]",
+            "DatasourceType": "[steps('datasourceStep').datasourceType]",
+            "N8NWebhookUrl": "[steps('n8nStep').n8nWebhookUrl]",
+            "N8NBearerToken": "[steps('n8nStep').n8nBearerToken]",
+            "AzureSearchService": "[steps('azureSearchStep').azureSearchService]",
+            "AzureSearchIndex": "[steps('azureSearchStep').azureSearchIndex]",
+            "AzureSearchKey": "[steps('azureSearchStep').azureSearchKey]",
+            "AzureOpenAIResource": "[steps('openAiStep').azureOpenAiResource]",
+            "AzureOpenAIModel": "[steps('openAiStep').azureOpenAiModel]",
+            "AzureOpenAIKey": "[steps('openAiStep').azureOpenAiKey]"
+        }
+    }
+}

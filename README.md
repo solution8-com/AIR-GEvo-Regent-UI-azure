@@ -49,7 +49,7 @@ cat .env | jq -R '. | capture("(?<name>[A-Z_]+)=(?<value>.*)")' | jq -s '.[].slo
 Please see [README_azd.md](./README_azd.md) for detailed instructions.
 
 ### One click Azure deployment
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fsample-app-aoai-chatGPT%2Fmain%2Finfrastructure%2Fdeployment.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fsample-app-aoai-chatGPT%2Fmain%2Finfrastructure%2Fdeployment.json/createUIDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fsolution8-com%2FAIR-GEvo-Regent-UI-azure%2Fmain%2Finfrastructure%2FcreateUiDefinition.json)
 
 Click on the Deploy to Azure button and configure your settings in the Azure Portal as described in the [Environment variables](#environment-variables) section.
 
@@ -196,6 +196,8 @@ Note: RBAC assignments can take a few minutes before becoming effective.
     |AZURE_SEARCH_VECTOR_COLUMNS|No||List of fields in your search index that contain vector embeddings of your documents to use when formulating a bot response. Represent these as a string joined with "|", e.g. `"product_description|product_manual"`|
     |AZURE_SEARCH_PERMITTED_GROUPS_COLUMN|No||Field from your Azure AI Search index that contains AAD group IDs that determine document-level access control.|
 
+    > To use the N8N data backend instead of Azure Search, set `DATASOURCE_TYPE` to `N8N` and configure `N8N_WEBHOOK_URL` and `N8N_BEARER_TOKEN`. When `DATASOURCE_TYPE` is `N8N`, Azure Search settings are not required.
+
     When using your own data with a vector index, ensure these settings are configured on your app:
     - `AZURE_SEARCH_QUERY_TYPE`: can be `vector`, `vectorSimpleHybrid`, or `vectorSemanticHybrid`,
     - `AZURE_OPENAI_EMBEDDING_NAME`: the name of your Ada (text-embedding-ada-002) model deployment on your Azure OpenAI resource.
@@ -337,6 +339,8 @@ Note: RBAC assignments can take a few minutes before becoming effective.
     |AZURE_SQL_SERVER_DATABASE_SERVER||Not publicly available at this time.|
 
 #### Chat with your data using Promptflow
+
+Promptflow is enabled independently of `DATASOURCE_TYPE`. Set `USE_PROMPTFLOW=True` to route requests to the Promptflow endpoint; `DATASOURCE_TYPE` remains reserved for grounding data sources like Azure Search, Elasticsearch, etc.
 
 Configure your settings using the table below.
 

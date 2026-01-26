@@ -43,6 +43,9 @@
     },
     "authClientSecret": {
       "value": "${AUTH_CLIENT_SECRET}"
+    },
+    "datasourceType": {
+      "value": "${DATASOURCE_TYPE}"
     }
   }
 }

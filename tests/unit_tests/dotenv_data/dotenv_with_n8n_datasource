@@ -1,0 +1,6 @@
+DATASOURCE_TYPE=N8N
+AZURE_OPENAI_ENDPOINT=https://example.openai.azure.com/
+AZURE_OPENAI_MODEL=gpt-4
+AZURE_OPENAI_KEY=fake-key
+N8N_WEBHOOK_URL=https://example.com/webhook
+N8N_BEARER_TOKEN=fake-token
