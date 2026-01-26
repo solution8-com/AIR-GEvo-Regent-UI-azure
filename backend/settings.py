@@ -40,14 +40,14 @@ class _UiSettings(BaseSettings):
         env_ignore_empty=True
     )
 
-    title: str = "Global Evolution"
+    title: str = "Global Evolution - backend build"
     logo: Optional[str] = None
     chat_logo: Optional[str] = None
     chat_title: str = "Start chatting"
     chat_description: str = "This is Regent, an early version of a Compliance Assistant."
     favicon: str = "/favicon.ico"
     show_share_button: bool = True
-    show_chat_history_button: bool = false
+    show_chat_history_button: bool = False
 
 
 class _ChatHistorySettings(BaseSettings):
