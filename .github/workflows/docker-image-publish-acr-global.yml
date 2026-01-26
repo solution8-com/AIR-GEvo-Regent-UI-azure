@@ -1,0 +1,96 @@
+name: Docker Image Publish - Registry:ACR
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+  IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (service principal secret)
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login Docker to ACR (token-based; no ACR admin)
+        run: |
+          TOKEN=$(az acr login --name acrregenttest --expose-token --output tsv --query accessToken)
+          echo "$TOKEN" | docker login acrregenttest.azurecr.io \
+            --username 00000000-0000-0000-0000-000000000000 \
+            --password-stdin
+
+      # - name: Build + push (tag = commit SHA)
+      #   run: |
+      #     TAG="${GITHUB_SHA}"
+      #     IMAGE="acrregent.azurecr.io/AIR-GEvo-Regent-UI-azure:${TAG}"
+      #     docker build -t "$IMAGE" .
+      #     docker push "$IMAGE"
+      #     echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      # - name: Point Web App at the new image
+      #   run: |
+      #     az webapp config container set \
+      #       -g "${{ vars.RG }}" -n "${{ vars.APP }}" \
+      #       --docker-custom-image-name "DOCKER|${IMAGE}"
+
+      # - name: Restart Web App
+      #   run: |
+      #     az webapp restart -g "${{ vars.RG }}" -n "${{ vars.APP }}"
+
+      - name: Build image
+        run: |
+          docker build -f WebApp.Dockerfile -t $ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }} .
+      
+      - name: Tag as latest
+        run: |
+          docker tag $ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }} $ACR_LOGIN_SERVER/$IMAGE_NAME:latest
+      
+      - name: Push images
+        run: |
+          docker push $ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }}
+          docker push $ACR_LOGIN_SERVER/$IMAGE_NAME:latest
+          
+# name: Docker Image Publish - Registry:ACR
+
+# on:
+#   push:
+#     branches:
+#     - main
+
+# jobs:
+
+#   build:
+
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     - name: Azure Container Registry Login
+#       uses: Azure/docker-login@v2
+#       with:
+#         # Container registry username
+#         username: ${{ secrets.SAMPLEAPP_ACR_USERNAME }}
+#         # Container registry password
+#         password: ${{ secrets.SAMPLEAPP_ACR_PASSWORD }}
+#         # Container registry server url
+#         login-server: sampleappaoaichatgpt.azurecr.io
+        
+#     - uses: actions/checkout@v3
+#     - name: Build the Docker image
+#       run:         
+#         docker build . --file WebApp.Dockerfile --tag sampleappaoaichatgpt.azurecr.io/sample-app-aoai-chatgpt:$(date +'%Y-%m-%d')_$GITHUB_RUN_NUMBER;
+#         docker tag sampleappaoaichatgpt.azurecr.io/sample-app-aoai-chatgpt:$(date +'%Y-%m-%d')_$GITHUB_RUN_NUMBER sampleappaoaichatgpt.azurecr.io/sample-app-aoai-chatgpt:latest;
+#         docker push sampleappaoaichatgpt.azurecr.io/sample-app-aoai-chatgpt:$(date +'%Y-%m-%d')_$GITHUB_RUN_NUMBER;
+#         docker push sampleappaoaichatgpt.azurecr.io/sample-app-aoai-chatgpt:latest;
+      
