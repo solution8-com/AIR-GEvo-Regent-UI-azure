@@ -31,7 +31,6 @@ jobs:
       - name: Azure login with federated identity
         uses: azure/login@v2
         with:
-          auth-type: OIDC
           client-id: ${{ secrets.AZURE_CLIENT_ID_FEDERATED }}        # user-assigned managed identity client ID
           tenant-id: ${{ secrets.AZURE_TENANT_ID_FEDERATED }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID_FEDERATED }}
