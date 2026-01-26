@@ -1,4 +1,4 @@
-name: Docker Image Publish - Registry:ACR
+name: Docker Image Publish - Registry:ACR@Global
 
 on:
   push:
