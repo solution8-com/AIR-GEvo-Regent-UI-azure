@@ -116,7 +116,7 @@
     },
     "ContainerRegistryName": {
       "type": "string",
-      "defaultValue": "region-acr",
+      "defaultValue": "ACR-Regent",
       "metadata": {
         "description": "Name of the Azure Container Registry to create"
       }
