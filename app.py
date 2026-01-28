@@ -870,6 +870,90 @@ async def update_message():
         return jsonify({"error": str(e)}), 500
 
 
+@bp.route("/history/message_rating", methods=["POST"])
+async def update_message_rating():
+    await cosmos_db_ready.wait()
+    authenticated_user = get_authenticated_user_details(request_headers=request.headers)
+    user_id = authenticated_user["user_principal_id"]
+
+    ## check request for message_id and msgrating
+    request_json = await request.get_json()
+    message_id = request_json.get("message_id", None)
+    msgrating = request_json.get("msgrating", None)
+    
+    try:
+        if not message_id:
+            return jsonify({"error": "message_id is required"}), 400
+
+        ## update the message rating in cosmos
+        updated_message = await current_app.cosmos_conversation_client.update_message_rating(
+            user_id, message_id, msgrating
+        )
+        
+        if updated_message:
+            ## Send n8n webhook with rating update
+            try:
+                if app_settings.n8n and app_settings.n8n.webhook_url:
+                    # Get the full message and conversation details for the webhook
+                    conversation_id = updated_message.get("conversationId", "")
+                    session_id = updated_message.get("id", message_id)
+                    
+                    # Build the n8n payload with full contract
+                    n8n_payload = {
+                        "conversation_id": conversation_id,
+                        "user_id": user_id,
+                        "session_id": session_id,
+                        "message": {
+                            "role": updated_message.get("role", "assistant"),
+                            "content": updated_message.get("content", "")
+                        },
+                        "metadata": {
+                            "timestamp": updated_message.get("updatedAt", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())),
+                            "source": "chat-ui-rating",
+                            "msgrating": msgrating,
+                            "message_id": message_id
+                        }
+                    }
+                    
+                    headers = {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                        "Authorization": f"Bearer {app_settings.n8n.bearer_token}",
+                    }
+                    
+                    # Send the webhook asynchronously (fire-and-forget)
+                    timeout_ms = app_settings.n8n.timeout_ms if app_settings.n8n else 15000
+                    async with httpx.AsyncClient(timeout=float(timeout_ms) / 1000) as http_client:
+                        await http_client.post(app_settings.n8n.webhook_url, json=n8n_payload, headers=headers)
+            except Exception as webhook_error:
+                # Log but don't fail the request if webhook fails
+                logging.warning(f"Failed to send n8n webhook for rating update: {webhook_error}")
+            
+            return (
+                jsonify(
+                    {
+                        "message": f"Successfully updated message rating",
+                        "message_id": message_id,
+                        "msgrating": msgrating
+                    }
+                ),
+                200,
+            )
+        else:
+            return (
+                jsonify(
+                    {
+                        "error": f"Unable to update message {message_id}. It either does not exist or the user does not have access to it."
+                    }
+                ),
+                404,
+            )
+
+    except Exception as e:
+        logging.exception("Exception in /history/message_rating")
+        return jsonify({"error": str(e)}), 500
+
+
 @bp.route("/history/delete", methods=["DELETE"])
 async def delete_conversation():
     await cosmos_db_ready.wait()
