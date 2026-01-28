@@ -136,6 +136,7 @@ export type UI = {
 export type FrontendSettings = {
   auth_enabled?: string | null
   feedback_enabled?: string | null
+  chat_provider?: string | null
   ui?: UI
   sanitize_answer?: boolean
   oyd_enabled?: boolean
@@ -155,4 +156,33 @@ export enum Feedback {
   Sexual = 'sexual',
   Manipulative = 'manipulative',
   OtherHarmful = 'other_harmlful'
+}
+
+export type ExitIntent = {
+  label: string
+  confidence: number
+}
+
+export type IntentClassificationRequest = {
+  conversation_id: string
+  messages: Array<{ role: string; content: string }>
+}
+
+export type IntentClassificationResponse = {
+  conversation_id: string
+  intents?: ExitIntent[]
+  model?: string
+  generated_at?: string
+  fallback: boolean
+  error?: string
+}
+
+export type ExitIntentLog = {
+  conversation_id: string
+  timestamp: string
+  selected_intent: string
+  confidence?: number
+  free_text?: string
+  user_canceled_early: boolean
+  source: 'model' | 'fallback'
 }

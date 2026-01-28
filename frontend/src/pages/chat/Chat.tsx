@@ -36,8 +36,10 @@ import {
 import { Answer } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
 import { ChatHistoryPanel } from "../../components/ChatHistory/ChatHistoryPanel";
+import { ExitIntentModal } from "../../components/ExitIntentModal";
 import { AppStateContext } from "../../state/AppProvider";
 import { useBoolean } from "@fluentui/react-hooks";
+import { useExitIntent } from "../../hooks/useExitIntent";
 
 const enum messageStatus {
   NotRunning = 'Not Running',
@@ -49,6 +51,7 @@ const Chat = () => {
   const appStateContext = useContext(AppStateContext)
   const ui = appStateContext?.state.frontendSettings?.ui
   const AUTH_ENABLED = appStateContext?.state.frontendSettings?.auth_enabled
+  const CHAT_PROVIDER = appStateContext?.state.frontendSettings?.chat_provider
   const chatMessageStreamEnd = useRef<HTMLDivElement | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [showLoadingMessage, setShowLoadingMessage] = useState<boolean>(false)
@@ -65,6 +68,20 @@ const Chat = () => {
   const [errorMsg, setErrorMsg] = useState<ErrorMessage | null>()
   const [logo, setLogo] = useState('')
   const [answerId, setAnswerId] = useState<string>('')
+
+  // Exit intent modal
+  const exitIntentEnabled = CHAT_PROVIDER !== 'n8n'
+  const hasUserMessage = messages.some(m => m.role === 'user')
+  const hasAssistantMessage = messages.some(m => m.role === 'assistant')
+  const conversationId = appStateContext?.state.currentChat?.id || null
+  
+  const { isModalOpen, hideModal } = useExitIntent({
+    enabled: exitIntentEnabled,
+    conversationId,
+    hasUserMessage,
+    hasAssistantMessage,
+    isStreaming: isLoading
+  })
 
   const errorDialogContentProps = {
     type: DialogType.close,
@@ -1035,6 +1052,16 @@ const Chat = () => {
           {appStateContext?.state.isChatHistoryOpen &&
             appStateContext?.state.isCosmosDBAvailable?.status !== CosmosDBStatus.NotConfigured && <ChatHistoryPanel />}
         </Stack>
+      )}
+
+      {exitIntentEnabled && conversationId && (
+        <ExitIntentModal
+          isOpen={isModalOpen}
+          onDismiss={hideModal}
+          conversationId={conversationId}
+          messages={messages}
+          isStreaming={isLoading}
+        />
       )}
     </div>
   )

@@ -93,6 +93,25 @@ class _N8nSettings(BaseSettings):
     timeout_ms: int = 15000
 
 
+class _GitHubModelsSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="GITHUB_MODELS_",
+        env_file=DOTENV_PATH,
+        extra="ignore",
+        env_ignore_empty=True
+    )
+
+    endpoint_base: str = Field(default="https://models.github.com")
+    org: Optional[str] = None
+    token: Optional[str] = None
+    api_version: str = Field(default="2022-11-28")
+
+    @property
+    def is_configured(self) -> bool:
+        """Check if GitHub Models is properly configured"""
+        return bool(self.org and self.token)
+
+
 class _AzureOpenAIFunction(BaseModel):
     name: str = Field(..., min_length=1)
     description: str = Field(..., min_length=1)
@@ -803,6 +822,7 @@ class _AppSettings(BaseModel):
     datasource: Optional[DatasourcePayloadConstructor] = None
     promptflow: Optional[_PromptflowSettings] = None
     n8n: Optional[_N8nSettings] = None
+    github_models: Optional[_GitHubModelsSettings] = None
 
     @model_validator(mode="after")
     def set_promptflow_settings(self) -> "_AppSettings":
@@ -830,6 +850,14 @@ class _AppSettings(BaseModel):
             object.__setattr__(self, "n8n", _N8nSettings())
         except ValidationError:
             object.__setattr__(self, "n8n", None)
+        return self
+    
+    @model_validator(mode="after")
+    def set_github_models_settings(self) -> "_AppSettings":
+        try:
+            object.__setattr__(self, "github_models", _GitHubModelsSettings())
+        except ValidationError:
+            object.__setattr__(self, "github_models", None)
         return self
     
     @model_validator(mode="after")

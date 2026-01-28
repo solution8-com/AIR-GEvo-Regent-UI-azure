@@ -352,3 +352,32 @@ export const historyMessageFeedback = async (messageId: string, feedback: string
     })
   return response
 }
+
+export const intentClassification = async (
+  conversationId: string,
+  messages: Array<{ role: string; content: string }>
+): Promise<Response> => {
+  const response = await fetch('/api/intent_classification', {
+    method: 'POST',
+    body: JSON.stringify({
+      conversation_id: conversationId,
+      messages: messages
+    }),
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+    .then(res => {
+      return res
+    })
+    .catch(_err => {
+      console.error('There was an issue classifying intent.')
+      const errRes: Response = {
+        ...new Response(),
+        ok: false,
+        status: 500
+      }
+      return errRes
+    })
+  return response
+}
