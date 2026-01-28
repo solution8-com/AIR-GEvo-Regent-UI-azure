@@ -94,6 +94,7 @@ frontend_settings = {
         app_settings.chat_history and
         app_settings.chat_history.enable_feedback
     ),
+    "chat_provider": app_settings.base_settings.chat_provider,
     "ui": {
         "title": app_settings.ui.title,
         "logo": app_settings.ui.logo,
@@ -715,6 +716,198 @@ def get_frontend_settings():
     except Exception as e:
         logging.exception("Exception in /frontend_settings")
         return jsonify({"error": str(e)}), 500
+
+
+@bp.route("/api/intent_classification", methods=["POST"])
+async def intent_classification():
+    """
+    Exit intent classification endpoint using GitHub Models API.
+    Returns intent suggestions based on conversation context.
+    """
+    import re
+    
+    request_json = None
+    try:
+        if not request.is_json:
+            return jsonify({"error": "request must be json", "fallback": True}), 200
+        
+        request_json = await request.get_json()
+        conversation_id = request_json.get("conversation_id")
+        messages = request_json.get("messages", [])
+        
+        if not conversation_id:
+            return jsonify({"error": "conversation_id is required", "fallback": True}), 200
+        
+        if not messages or not isinstance(messages, list):
+            return jsonify({"error": "messages array is required", "fallback": True}), 200
+        
+        # Check if GitHub Models is configured
+        if not app_settings.github_models or not app_settings.github_models.is_configured:
+            logging.warning("GitHub Models not configured, returning fallback")
+            return jsonify({
+                "conversation_id": conversation_id,
+                "error": "GitHub Models not configured",
+                "fallback": True
+            }), 200
+        
+        # Build the system prompt for intent classification
+        system_prompt = """You are an intent classifier for a compliance assistant application. 
+Based on the conversation history, suggest 3-5 specific intents that describe why the user might be leaving.
+Each intent should be a clear, actionable statement from the user's perspective.
+
+Return ONLY a valid JSON array of objects with this exact structure:
+[
+  {"label": "Intent description", "confidence": 0.95},
+  {"label": "Another intent", "confidence": 0.80}
+]
+
+Rules:
+- Return 3-5 intents maximum
+- Each label should be specific to this conversation
+- Confidence should be between 0.0 and 1.0
+- Sort by confidence (highest first)
+- Return ONLY the JSON array, no other text"""
+
+        # Prepare messages for the API call
+        api_messages = [
+            {"role": "system", "content": system_prompt}
+        ]
+        
+        # Add conversation context (limit to last 10 messages to avoid token limits)
+        for msg in messages[-10:]:
+            if msg.get("role") in ["user", "assistant"]:
+                content = msg.get("content", "")
+                if isinstance(content, list):
+                    # Handle multi-part content (e.g., images)
+                    text_parts = [p.get("text", "") for p in content if p.get("type") == "text"]
+                    content = " ".join(text_parts)
+                api_messages.append({
+                    "role": msg["role"],
+                    "content": str(content)
+                })
+        
+        # Add final prompt
+        api_messages.append({
+            "role": "user",
+            "content": "Based on this conversation, what are the most likely reasons I might be leaving? Return only the JSON array."
+        })
+        
+        # Call GitHub Models API with timeout
+        endpoint_url = f"{app_settings.github_models.endpoint_base}/orgs/{app_settings.github_models.org}/inference/chat/completions"
+        
+        headers = {
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {app_settings.github_models.token}",
+            "X-GitHub-Api-Version": app_settings.github_models.api_version,
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "model": "openai/gpt-4o-mini",
+            "messages": api_messages,
+            "temperature": 0.3,
+            "max_tokens": 500
+        }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                endpoint_url,
+                headers=headers,
+                json=payload,
+                timeout=3.0  # 3 second timeout as specified
+            )
+        
+        if response.status_code != 200:
+            logging.error(f"GitHub Models API error: {response.status_code} - {response.text}")
+            return jsonify({
+                "conversation_id": conversation_id,
+                "error": f"API error: {response.status_code}",
+                "fallback": True
+            }), 200
+        
+        result = response.json()
+        
+        # Extract intent from response
+        if "choices" not in result or len(result["choices"]) == 0:
+            return jsonify({
+                "conversation_id": conversation_id,
+                "error": "No choices in API response",
+                "fallback": True
+            }), 200
+        
+        content = result["choices"][0].get("message", {}).get("content", "")
+        
+        # Parse JSON from content
+        # Extract JSON array from the response (handle markdown code blocks)
+        # Use non-greedy match to get first JSON array
+        json_match = re.search(r'\[[\s\S]*?\]', content)
+        if not json_match:
+            logging.warning(f"Could not extract JSON from response: {content}")
+            return jsonify({
+                "conversation_id": conversation_id,
+                "error": "Invalid response format",
+                "fallback": True
+            }), 200
+        
+        intents = json.loads(json_match.group(0))
+        
+        # Validate intents structure
+        if not isinstance(intents, list) or len(intents) == 0:
+            return jsonify({
+                "conversation_id": conversation_id,
+                "error": "Empty or invalid intents array",
+                "fallback": True
+            }), 200
+        
+        # Validate each intent has required fields
+        validated_intents = []
+        for intent in intents:
+            if isinstance(intent, dict) and "label" in intent:
+                validated_intents.append({
+                    "label": str(intent["label"]),
+                    "confidence": float(intent.get("confidence", 0.5))
+                })
+        
+        if len(validated_intents) == 0:
+            return jsonify({
+                "conversation_id": conversation_id,
+                "error": "No valid intents found",
+                "fallback": True
+            }), 200
+        
+        # Return successful response
+        return jsonify({
+            "conversation_id": conversation_id,
+            "intents": validated_intents,
+            "model": "openai/gpt-4o-mini",
+            "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "fallback": False
+        }), 200
+        
+    except asyncio.TimeoutError:
+        logging.warning("GitHub Models API timeout")
+        conv_id = request_json.get("conversation_id", "") if request_json else ""
+        return jsonify({
+            "conversation_id": conv_id,
+            "error": "Request timeout",
+            "fallback": True
+        }), 200
+    except json.JSONDecodeError as e:
+        logging.warning(f"JSON decode error: {str(e)}")
+        conv_id = request_json.get("conversation_id", "") if request_json else ""
+        return jsonify({
+            "conversation_id": conv_id,
+            "error": "Invalid JSON in response",
+            "fallback": True
+        }), 200
+    except Exception as e:
+        logging.exception("Exception in /api/intent_classification")
+        conv_id = request_json.get("conversation_id", "") if request_json else ""
+        return jsonify({
+            "conversation_id": conv_id,
+            "error": str(e),
+            "fallback": True
+        }), 200
 
 
 ## Conversation History API ##

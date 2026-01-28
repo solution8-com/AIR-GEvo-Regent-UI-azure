@@ -1,0 +1,23 @@
+.modal {
+  max-width: 480px;
+}
+
+.intentButton {
+  border: 1px solid #d1d1d1;
+  background-color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.intentButton:hover {
+  background-color: #f3f2f1;
+  border-color: #8a8886;
+}
+
+.selectedButton {
+  border: 2px solid #0078d4 !important;
+  background-color: #f3f9fd !important;
+}
+
+.selectedButton:hover {
+  background-color: #e6f4fa !important;
+}
