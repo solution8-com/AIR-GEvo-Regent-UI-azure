@@ -5,6 +5,7 @@ export type AskResponse = {
   error?: string
   message_id?: string
   feedback?: Feedback
+  msgrating?: number | null
   exec_results?: ExecResults[]
 }
 
@@ -44,6 +45,7 @@ export type ChatMessage = {
   end_turn?: boolean
   date: string
   feedback?: Feedback
+  msgrating?: number | null
   context?: string
 }
 

@@ -33,7 +33,7 @@ param openAiResourceGroupLocation string = location
 param openAiSkuName string = ''
 param openAIModel string = '5mini'
 param openAIModelName string = 'gpt-5-mini'
-param openAITemperature int = ''
+param openAITemperature string = ''
 param openAITopP int = 1
 param openAIMaxTokens int = 3000
 param openAIStopSequence string = ''
@@ -48,6 +48,10 @@ param formRecognizerResourceGroupName string = ''
 param formRecognizerResourceGroupLocation string = location
 param formRecognizerSkuName string = ''
 
+param deployOpenAI bool = false
+param deploySearch bool = false
+param deployDocPrep bool = false
+
 // Used for the Azure AD application
 param authClientId string
 @secure()
@@ -55,6 +59,8 @@ param authClientSecret string
 
 // Used for Cosmos DB
 param cosmosAccountName string = ''
+param cosmosAccountResourceGroupName string = ''
+param useExistingCosmosAccount bool = false
 
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
@@ -62,6 +68,10 @@ param principalId string = ''
 var abbrs = loadJsonContent('abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var tags = { 'azd-env-name': environmentName }
+var openAiResourceGroupNameEffective = !empty(openAiResourceGroupName) ? openAiResourceGroupName : resourceGroup.name
+var searchResourceGroupNameEffective = !empty(searchServiceResourceGroupName) ? searchServiceResourceGroupName : resourceGroup.name
+var cosmosExistingResourceGroupName = !empty(cosmosAccountResourceGroupName) ? cosmosAccountResourceGroupName : resourceGroup.name
+var cosmosDataContributorRoleId = '00000000-0000-0000-0000-000000000002'
 
 // Organize resources in a resource group
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
@@ -70,12 +80,16 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   tags: tags
 }
 
-resource openAiResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(openAiResourceGroupName)) {
-  name: !empty(openAiResourceGroupName) ? openAiResourceGroupName : resourceGroup.name
+resource openAiResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = {
+  name: openAiResourceGroupNameEffective
 }
 
-resource searchServiceResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(searchServiceResourceGroupName)) {
-  name: !empty(searchServiceResourceGroupName) ? searchServiceResourceGroupName : resourceGroup.name
+resource searchServiceResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = {
+  name: searchResourceGroupNameEffective
+}
+
+resource cosmosResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (useExistingCosmosAccount) {
+  name: cosmosExistingResourceGroupName
 }
 
 
@@ -115,34 +129,34 @@ module backend 'core/host/appservice.bicep' = {
     authIssuerUri: authIssuerUri
     appSettings: {
       // search
-      AZURE_SEARCH_INDEX: searchIndexName
-      AZURE_SEARCH_SERVICE: searchService.outputs.name
-      AZURE_SEARCH_KEY: searchService.outputs.adminKey
-      AZURE_SEARCH_USE_SEMANTIC_SEARCH: searchUseSemanticSearch
-      AZURE_SEARCH_SEMANTIC_SEARCH_CONFIG: searchSemanticSearchConfig
-      AZURE_SEARCH_TOP_K: searchTopK
-      AZURE_SEARCH_ENABLE_IN_DOMAIN: searchEnableInDomain
-      AZURE_SEARCH_CONTENT_COLUMNS: searchContentColumns
-      AZURE_SEARCH_FILENAME_COLUMN: searchFilenameColumn
-      AZURE_SEARCH_TITLE_COLUMN: searchTitleColumn
-      AZURE_SEARCH_URL_COLUMN: searchUrlColumn
+      AZURE_SEARCH_INDEX: deploySearch ? searchIndexName : ''
+      AZURE_SEARCH_SERVICE: deploySearch ? searchService.outputs.name : ''
+      AZURE_SEARCH_KEY: deploySearch ? searchService.outputs.adminKey : ''
+      AZURE_SEARCH_USE_SEMANTIC_SEARCH: deploySearch ? searchUseSemanticSearch : false
+      AZURE_SEARCH_SEMANTIC_SEARCH_CONFIG: deploySearch ? searchSemanticSearchConfig : ''
+      AZURE_SEARCH_TOP_K: deploySearch ? searchTopK : 0
+      AZURE_SEARCH_ENABLE_IN_DOMAIN: deploySearch ? searchEnableInDomain : false
+      AZURE_SEARCH_CONTENT_COLUMNS: deploySearch ? searchContentColumns : ''
+      AZURE_SEARCH_FILENAME_COLUMN: deploySearch ? searchFilenameColumn : ''
+      AZURE_SEARCH_TITLE_COLUMN: deploySearch ? searchTitleColumn : ''
+      AZURE_SEARCH_URL_COLUMN: deploySearch ? searchUrlColumn : ''
       // openai
-      AZURE_OPENAI_RESOURCE: openAi.outputs.name
-      AZURE_OPENAI_MODEL: openAIModel
-      AZURE_OPENAI_MODEL_NAME: openAIModelName
-      AZURE_OPENAI_KEY: openAi.outputs.key
-      AZURE_OPENAI_TEMPERATURE: openAITemperature
-      AZURE_OPENAI_TOP_P: openAITopP
-      AZURE_OPENAI_MAX_TOKENS: openAIMaxTokens
-      AZURE_OPENAI_STOP_SEQUENCE: openAIStopSequence
-      AZURE_OPENAI_SYSTEM_MESSAGE: openAISystemMessage
-      AZURE_OPENAI_STREAM: openAIStream
+      AZURE_OPENAI_RESOURCE: deployOpenAI ? openAi.outputs.name : ''
+      AZURE_OPENAI_MODEL: deployOpenAI ? openAIModel : ''
+      AZURE_OPENAI_MODEL_NAME: deployOpenAI ? openAIModelName : ''
+      AZURE_OPENAI_KEY: deployOpenAI ? openAi.outputs.key : ''
+      AZURE_OPENAI_TEMPERATURE: deployOpenAI ? openAITemperature : ''
+      AZURE_OPENAI_TOP_P: deployOpenAI ? openAITopP : 0
+      AZURE_OPENAI_MAX_TOKENS: deployOpenAI ? openAIMaxTokens : 0
+      AZURE_OPENAI_STOP_SEQUENCE: deployOpenAI ? openAIStopSequence : ''
+      AZURE_OPENAI_SYSTEM_MESSAGE: deployOpenAI ? openAISystemMessage : ''
+      AZURE_OPENAI_STREAM: deployOpenAI ? openAIStream : false
     }
   }
 }
 
 
-module openAi 'core/ai/cognitiveservices.bicep' = {
+module openAi 'core/ai/cognitiveservices.bicep' = if (deployOpenAI) {
   name: 'openai'
   scope: openAiResourceGroup
   params: {
@@ -175,7 +189,7 @@ module openAi 'core/ai/cognitiveservices.bicep' = {
   }
 }
 
-module searchService 'core/search/search-services.bicep' = {
+module searchService 'core/search/search-services.bicep' = if (deploySearch) {
   name: 'search-service'
   scope: searchServiceResourceGroup
   params: {
@@ -195,7 +209,7 @@ module searchService 'core/search/search-services.bicep' = {
 }
 
 // The application database
-module cosmos 'db.bicep' = {
+module cosmos 'db.bicep' = if (!useExistingCosmosAccount) {
   name: 'cosmos'
   scope: resourceGroup
   params: {
@@ -206,9 +220,28 @@ module cosmos 'db.bicep' = {
   }
 }
 
+resource existingCosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2022-08-15' existing = if (useExistingCosmosAccount) {
+  name: cosmosAccountName
+  scope: cosmosResourceGroup
+}
+
+module existingCosmosRoleAssignment 'core/database/cosmos/sql/cosmos-sql-role-assign.bicep' = if (useExistingCosmosAccount) {
+  name: 'cosmos-existing-role-assignment'
+  scope: cosmosResourceGroup
+  params: {
+    accountName: cosmosAccountName
+    roleDefinitionId: resourceId(cosmosExistingResourceGroupName, 'Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions', cosmosAccountName, cosmosDataContributorRoleId)
+    principalId: backend.outputs.identityPrincipalId
+  }
+  dependsOn: [
+    backend
+    existingCosmosAccount
+  ]
+}
+
 
 // USER ROLES
-module openAiRoleUser 'core/security/role.bicep' = {
+module openAiRoleUser 'core/security/role.bicep' = if (deployOpenAI) {
   scope: openAiResourceGroup
   name: 'openai-role-user'
   params: {
@@ -218,7 +251,7 @@ module openAiRoleUser 'core/security/role.bicep' = {
   }
 }
 
-module searchRoleUser 'core/security/role.bicep' = {
+module searchRoleUser 'core/security/role.bicep' = if (deploySearch) {
   scope: searchServiceResourceGroup
   name: 'search-role-user'
   params: {
@@ -228,7 +261,7 @@ module searchRoleUser 'core/security/role.bicep' = {
   }
 }
 
-module searchIndexDataContribRoleUser 'core/security/role.bicep' = {
+module searchIndexDataContribRoleUser 'core/security/role.bicep' = if (deploySearch) {
   scope: searchServiceResourceGroup
   name: 'search-index-data-contrib-role-user'
   params: {
@@ -238,7 +271,7 @@ module searchIndexDataContribRoleUser 'core/security/role.bicep' = {
   }
 }
 
-module searchServiceContribRoleUser 'core/security/role.bicep' = {
+module searchServiceContribRoleUser 'core/security/role.bicep' = if (deploySearch) {
   scope: searchServiceResourceGroup
   name: 'search-service-contrib-role-user'
   params: {
@@ -249,7 +282,7 @@ module searchServiceContribRoleUser 'core/security/role.bicep' = {
 }
 
 // SYSTEM IDENTITIES
-module openAiRoleBackend 'core/security/role.bicep' = {
+module openAiRoleBackend 'core/security/role.bicep' = if (deployOpenAI) {
   scope: openAiResourceGroup
   name: 'openai-role-backend'
   params: {
@@ -259,7 +292,7 @@ module openAiRoleBackend 'core/security/role.bicep' = {
   }
 }
 
-module searchRoleBackend 'core/security/role.bicep' = {
+module searchRoleBackend 'core/security/role.bicep' = if (deploySearch) {
   scope: searchServiceResourceGroup
   name: 'search-role-backend'
   params: {
@@ -270,7 +303,7 @@ module searchRoleBackend 'core/security/role.bicep' = {
 }
 
 // For doc prep
-module docPrepResources 'docprep.bicep' = {
+module docPrepResources 'docprep.bicep' = if (deployDocPrep) {
   name: 'docprep-resources${resourceToken}'
   params: {
     location: location
@@ -291,44 +324,44 @@ output AZURE_RESOURCE_GROUP string = resourceGroup.name
 output BACKEND_URI string = backend.outputs.uri
 
 // search
-output AZURE_SEARCH_INDEX string = searchIndexName
-output AZURE_SEARCH_SERVICE string = searchService.outputs.name
-output AZURE_SEARCH_SERVICE_RESOURCE_GROUP string = searchServiceResourceGroup.name
-output AZURE_SEARCH_SKU_NAME string = searchService.outputs.skuName
-output AZURE_SEARCH_KEY string = searchService.outputs.adminKey
-output AZURE_SEARCH_USE_SEMANTIC_SEARCH bool = searchUseSemanticSearch
-output AZURE_SEARCH_SEMANTIC_SEARCH_CONFIG string = searchSemanticSearchConfig
-output AZURE_SEARCH_TOP_K int = searchTopK
-output AZURE_SEARCH_ENABLE_IN_DOMAIN bool = searchEnableInDomain
-output AZURE_SEARCH_CONTENT_COLUMNS string = searchContentColumns
-output AZURE_SEARCH_FILENAME_COLUMN string = searchFilenameColumn
-output AZURE_SEARCH_TITLE_COLUMN string = searchTitleColumn
-output AZURE_SEARCH_URL_COLUMN string = searchUrlColumn
+output AZURE_SEARCH_INDEX string = deploySearch ? searchIndexName : ''
+output AZURE_SEARCH_SERVICE string = deploySearch ? searchService.outputs.name : ''
+output AZURE_SEARCH_SERVICE_RESOURCE_GROUP string = deploySearch ? searchServiceResourceGroup.name : ''
+output AZURE_SEARCH_SKU_NAME string = deploySearch ? searchService.outputs.skuName : ''
+output AZURE_SEARCH_KEY string = deploySearch ? searchService.outputs.adminKey : ''
+output AZURE_SEARCH_USE_SEMANTIC_SEARCH bool = deploySearch ? searchUseSemanticSearch : false
+output AZURE_SEARCH_SEMANTIC_SEARCH_CONFIG string = deploySearch ? searchSemanticSearchConfig : ''
+output AZURE_SEARCH_TOP_K int = deploySearch ? searchTopK : 0
+output AZURE_SEARCH_ENABLE_IN_DOMAIN bool = deploySearch ? searchEnableInDomain : false
+output AZURE_SEARCH_CONTENT_COLUMNS string = deploySearch ? searchContentColumns : ''
+output AZURE_SEARCH_FILENAME_COLUMN string = deploySearch ? searchFilenameColumn : ''
+output AZURE_SEARCH_TITLE_COLUMN string = deploySearch ? searchTitleColumn : ''
+output AZURE_SEARCH_URL_COLUMN string = deploySearch ? searchUrlColumn : ''
 
 // openai
-output AZURE_OPENAI_RESOURCE string = openAi.outputs.name
-output AZURE_OPENAI_RESOURCE_GROUP string = openAiResourceGroup.name
-output AZURE_OPENAI_ENDPOINT string = openAi.outputs.endpoint
-output AZURE_OPENAI_MODEL string = openAIModel
-output AZURE_OPENAI_MODEL_NAME string = openAIModelName
-output AZURE_OPENAI_SKU_NAME string = openAi.outputs.skuName
-output AZURE_OPENAI_KEY string = openAi.outputs.key
-output AZURE_OPENAI_EMBEDDING_NAME string = '${embeddingDeploymentName}'
-output AZURE_OPENAI_TEMPERATURE int = openAITemperature
-output AZURE_OPENAI_TOP_P int = openAITopP
-output AZURE_OPENAI_MAX_TOKENS int = openAIMaxTokens
-output AZURE_OPENAI_STOP_SEQUENCE string = openAIStopSequence
-output AZURE_OPENAI_SYSTEM_MESSAGE string = openAISystemMessage
-output AZURE_OPENAI_STREAM bool = openAIStream
+output AZURE_OPENAI_RESOURCE string = deployOpenAI ? openAi.outputs.name : ''
+output AZURE_OPENAI_RESOURCE_GROUP string = deployOpenAI ? openAiResourceGroup.name : ''
+output AZURE_OPENAI_ENDPOINT string = deployOpenAI ? openAi.outputs.endpoint : ''
+output AZURE_OPENAI_MODEL string = deployOpenAI ? openAIModel : ''
+output AZURE_OPENAI_MODEL_NAME string = deployOpenAI ? openAIModelName : ''
+output AZURE_OPENAI_SKU_NAME string = deployOpenAI ? openAi.outputs.skuName : ''
+output AZURE_OPENAI_KEY string = deployOpenAI ? openAi.outputs.key : ''
+output AZURE_OPENAI_EMBEDDING_NAME string = deployOpenAI ? '${embeddingDeploymentName}' : ''
+output AZURE_OPENAI_TEMPERATURE string = deployOpenAI ? openAITemperature : ''
+output AZURE_OPENAI_TOP_P int = deployOpenAI ? openAITopP : 0
+output AZURE_OPENAI_MAX_TOKENS int = deployOpenAI ? openAIMaxTokens : 0
+output AZURE_OPENAI_STOP_SEQUENCE string = deployOpenAI ? openAIStopSequence : ''
+output AZURE_OPENAI_SYSTEM_MESSAGE string = deployOpenAI ? openAISystemMessage : ''
+output AZURE_OPENAI_STREAM bool = deployOpenAI ? openAIStream : false
 
 // Used by prepdocs.py:
-output AZURE_FORMRECOGNIZER_SERVICE string = docPrepResources.outputs.AZURE_FORMRECOGNIZER_SERVICE
-output AZURE_FORMRECOGNIZER_RESOURCE_GROUP string = docPrepResources.outputs.AZURE_FORMRECOGNIZER_RESOURCE_GROUP
-output AZURE_FORMRECOGNIZER_SKU_NAME string = docPrepResources.outputs.AZURE_FORMRECOGNIZER_SKU_NAME
+output AZURE_FORMRECOGNIZER_SERVICE string = deployDocPrep ? docPrepResources.outputs.AZURE_FORMRECOGNIZER_SERVICE : ''
+output AZURE_FORMRECOGNIZER_RESOURCE_GROUP string = deployDocPrep ? docPrepResources.outputs.AZURE_FORMRECOGNIZER_RESOURCE_GROUP : ''
+output AZURE_FORMRECOGNIZER_SKU_NAME string = deployDocPrep ? docPrepResources.outputs.AZURE_FORMRECOGNIZER_SKU_NAME : ''
 
 // cosmos
-output AZURE_COSMOSDB_ACCOUNT string = cosmos.outputs.accountName
-output AZURE_COSMOSDB_DATABASE string = cosmos.outputs.databaseName
-output AZURE_COSMOSDB_CONVERSATIONS_CONTAINER string = cosmos.outputs.containerName
+output AZURE_COSMOSDB_ACCOUNT string = useExistingCosmosAccount ? cosmosAccountName : cosmos.outputs.accountName
+output AZURE_COSMOSDB_DATABASE string = useExistingCosmosAccount ? 'db_conversation_history' : cosmos.outputs.databaseName
+output AZURE_COSMOSDB_CONVERSATIONS_CONTAINER string = useExistingCosmosAccount ? 'conversations' : cosmos.outputs.containerName
 
 output AUTH_ISSUER_URI string = authIssuerUri

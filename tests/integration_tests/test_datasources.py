@@ -7,11 +7,7 @@ from jinja2 import Environment
 from quart import Quart
 
 
-datasources = [
-    "AzureCognitiveSearch",
-    "Elasticsearch",
-    "none"  # TODO: add tests for additional data sources
-]
+datasources = ["n8n"]
 
 
 def render_template_to_tempfile(
@@ -87,24 +83,15 @@ def dotenv_rendered_template_path(
         "dotenv.jinja2"
     )
 
-    if datasource != "none":
-        dotenv_template_params["DATASOURCE_TYPE"] = datasource
-    
-    if datasource != "Elasticsearch" and use_elasticsearch_embeddings:
-        pytest.skip("Elasticsearch embeddings not supported for test.")
-        
-    if datasource == "Elasticsearch":
-        dotenv_template_params["USE_ELASTICSEARCH_EMBEDDINGS"] = use_elasticsearch_embeddings
-    
-    dotenv_template_params["USE_AOAI_EMBEDDINGS"] = use_aoai_embeddings
-    dotenv_template_params["USE_MI"] = use_mi
-    
-    if use_aoai_embeddings or use_elasticsearch_embeddings:
-        dotenv_template_params["AZURE_SEARCH_QUERY_TYPE"] = "vector"
-        dotenv_template_params["ELASTICSEARCH_QUERY_TYPE"] = "vector"
-    else:
-        dotenv_template_params["AZURE_SEARCH_QUERY_TYPE"] = "simple"
-        dotenv_template_params["ELASTICSEARCH_QUERY_TYPE"] = "simple"
+    dotenv_template_params["DATASOURCE_TYPE"] = datasource
+    chat_provider = dotenv_template_params.get("CHAT_PROVIDER")
+    if not chat_provider:
+        pytest.skip("CHAT_PROVIDER must be set for n8n tests.")
+    if chat_provider != "n8n":
+        pytest.skip("n8n tests require CHAT_PROVIDER=n8n.")
+    # n8n integration expects DATASOURCE_TYPE to match CHAT_PROVIDER for webhook routing.
+    if datasource != chat_provider:
+        pytest.skip("DATASOURCE_TYPE must match CHAT_PROVIDER for n8n tests.")
     
     dotenv_template_params["ENABLE_CHAT_HISTORY"] = enable_chat_history
     dotenv_template_params["AZURE_OPENAI_STREAM"] = stream
@@ -128,14 +115,7 @@ def test_app(dotenv_rendered_template_path) -> Quart:
 
 @pytest.mark.asyncio
 async def test_dotenv(test_app: Quart, dotenv_template_params: dict[str, str]):
-    if dotenv_template_params["DATASOURCE_TYPE"] == "AzureCognitiveSearch":
-        message_content = dotenv_template_params["AZURE_SEARCH_QUERY"]
-        
-    elif dotenv_template_params["DATASOURCE_TYPE"] == "Elasticsearch":
-        message_content = dotenv_template_params["ELASTICSEARCH_QUERY"]
-        
-    else:
-        message_content = "What is Contoso?"
+    message_content = "What is Contoso?"
         
     request_path = "/conversation"
     request_data = {

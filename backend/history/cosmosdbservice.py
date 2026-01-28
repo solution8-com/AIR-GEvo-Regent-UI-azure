@@ -163,6 +163,26 @@ class CosmosConversationClient():
         else:
             return False
 
+    async def update_message_rating(self, user_id, message_id, msgrating):
+        try:
+            message = await self.container_client.read_item(item=message_id, partition_key=user_id)
+        except exceptions.CosmosResourceNotFoundError:
+            return False
+        except Exception:
+            return False
+        
+        if message:
+            if msgrating is None:
+                # Remove the msgrating field if it exists
+                message.pop('msgrating', None)
+            else:
+                message['msgrating'] = msgrating
+            message['updatedAt'] = datetime.utcnow().isoformat()
+            resp = await self.container_client.upsert_item(message)
+            return resp
+        else:
+            return False
+
     async def get_messages(self, user_id, conversation_id):
         parameters = [
             {

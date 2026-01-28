@@ -48,11 +48,13 @@ cat .env | jq -R '. | capture("(?<name>[A-Z_]+)=(?<value>.*)")' | jq -s '.[].slo
 ### Deploy with Azure Developer CLI
 Please see [README_azd.md](./README_azd.md) for detailed instructions.
 
-### One click Azure deployment
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fsample-app-aoai-chatGPT%2Fmain%2Finfrastructure%2Fdeployment.json)
+### One click Azure deployment (Original Azure)
+[![igNore this ffs](https://aka.ms/deploytoazurebutton)](THISWASJUSTANEXAMPLEIG ORETHIS/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fsample-app-aoai-chatGPT%2Fmain%2Finfrastructure%2Fdeployment.json)
 
-Click on the Deploy to Azure button and configure your settings in the Azure Portal as described in the [Environment variables](#environment-variables) section.
+[![Deploy the smaller scope to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsolution8-com%2FAIR-GEvo-Regent-UI-azure%2Fcopilot%2Fadd-n8n-webhook-chat-backend%2Finfrastructure%2Fdeployment.json)
+Click on the Deploy to Azure button and configure your settings in the Azure Portal as described in the [Environment variables](#app-settings) section.
 
+### One click Azure deployment (AIR optimized)
 Please see the [section below](#add-an-identity-provider) for important information about adding authentication to your app.
 
 ### Deploy from your local machine
@@ -159,17 +161,20 @@ Note: RBAC assignments can take a few minutes before becoming effective.
     See the [documentation](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/reference#example-response-2) for more information on these parameters.
 
 
-#### Chat with your data
+## Chat with your data
 
-#### Chat with your data using n8n backend (<SECTION NEEDS HEPL>)
+### Chat with your data using n8n backend
 
 1. Configure data source settings as described in the table below.
 
     | App Setting | Required? | Default Value | Note |
     | --- | --- | --- | ------------- |
-    |DATASOURCE_TYPE|Yes||Must be set to `n8n`|
+    |DATASOURCE_TYPE|Yes||Required value: `n8n`|
+    |CHAT_PROVIDER|Yes||Required value: `n8n`|
+    |N8N_WEBHOOK_URL|Yes||Webhook URL from the n8n workflow trigger|
+    |N8N_BEARER_TOKEN|Yes||Bearer token configured on the n8n webhook auth|
 
-#### Chat with your data using Azure Cognitive Search
+### Chat with your data using Azure Cognitive Search
 
 1. Update the `AZURE_OPENAI_*` environment variables as described in the [basic chat experience](#basic-chat-experience) above. 
 
@@ -201,7 +206,7 @@ Note: RBAC assignments can take a few minutes before becoming effective.
     - `AZURE_OPENAI_EMBEDDING_NAME`: the name of your Ada (text-embedding-ada-002) model deployment on your Azure OpenAI resource.
     - `AZURE_SEARCH_VECTOR_COLUMNS`: the vector columns in your index to use when searching. Join them with `|` like `contentVector|titleVector`.
 
-#### Chat with your data using Azure Cosmos DB
+### Chat with your data using Azure Cosmos DB
 
 1. Update the `AZURE_OPENAI_*` environment variables as described in the [basic chat experience](#basic-chat-experience) above. 
 
@@ -229,7 +234,7 @@ Note: RBAC assignments can take a few minutes before becoming effective.
     - `AZURE_OPENAI_EMBEDDING_NAME`: the name of your Ada (text-embedding-ada-002) model deployment on your Azure OpenAI resource.
     - `AZURE_COSMOSDB_MONGO_VCORE_VECTOR_COLUMNS`: the vector columns in your index to use when searching. Join them with `|` like `contentVector|titleVector`.
 
-#### Chat with your data using Elasticsearch (Preview)
+### Chat with your data using Elasticsearch (Preview)
 
 1. Update the `AZURE_OPENAI_*` environment variables as described in the [basic chat experience](#basic-chat-experience) above. 
 
@@ -264,7 +269,7 @@ Note: RBAC assignments can take a few minutes before becoming effective.
     - `ELASTICSEARCH_EMBEDDING_MODEL_ID`: the ID of the trained model used to produce embeddings on your index.
     - `ELASTICSEARCH_VECTOR_COLUMNS`: the vector columns in your index to use when searching. Join them with `|` like `contentVector|titleVector`.
 
-#### Chat with your data using Pinecone (Private Preview)
+### Chat with your data using Pinecone (Private Preview)
 
 1. Update the `AZURE_OPENAI_*` environment variables as described in the [basic chat experience](#basic-chat-experience) above. 
 
@@ -291,7 +296,7 @@ Note: RBAC assignments can take a few minutes before becoming effective.
     - `AZURE_OPENAI_EMBEDDING_NAME`: the name of your Ada (text-embedding-ada-002) model deployment on your Azure OpenAI resource.
     - `PINECONE_VECTOR_COLUMNS`: the vector columns in your index to use when searching. Join them with `|` like `contentVector|titleVector`.
 
-#### Chat with your data using Mongo DB (Private Preview)
+### Chat with your data using MongoDB (Private Preview)
 
 1. Update the `AZURE_OPENAI_*` environment variables as described in the [basic chat experience](#basic-chat-experience) above. 
 
@@ -319,7 +324,7 @@ Note: RBAC assignments can take a few minutes before becoming effective.
     - `AZURE_OPENAI_EMBEDDING_NAME`: the name of your Ada (text-embedding-ada-002) model deployment on your Azure OpenAI resource.
     - `MONGODB_VECTOR_COLUMNS`: the vector columns in your index to use when searching. Join them with `|` like `contentVector|titleVector`.
     
-#### Chat with your data using Azure SQL Server (Private Preview)
+### Chat with your data using Azure SQL Server (Private Preview)
 
 1. Update the `AZURE_OPENAI_*` environment variables as described in the [basic chat experience](#basic-chat-experience) above. 
 
@@ -336,7 +341,7 @@ Note: RBAC assignments can take a few minutes before becoming effective.
     |AZURE_SQL_SERVER_DATABASE_NAME||Not publicly available at this time.|
     |AZURE_SQL_SERVER_DATABASE_SERVER||Not publicly available at this time.|
 
-#### Chat with your data using Promptflow
+### Chat with your data using Promptflow
 
 Configure your settings using the table below.
 

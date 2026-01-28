@@ -44,204 +44,25 @@
                 "description": "Name of Application Insights"
             }
         },
-        "AzureSearchService": {
+        "N8NWebhookUrl": {
             "type": "string",
             "defaultValue": "",
             "metadata": {
-                "description": "Name of Azure Search Service"
+                "description": "n8n webhook endpoint URL"
             }
         },
-        "AzureSearchIndex": {
-            "type": "string",
-            "defaultValue": "",
-            "metadata": {
-                "description": "Name of Azure Search Index"
-            }
-        },
-        "AzureSearchKey": {
+        "N8NBearerToken": {
             "type": "securestring",
             "defaultValue": "",
             "metadata": {
-                "description": "Azure Search Admin Key"
+                "description": "Bearer token for n8n webhook"
             }
         },
-        "AzureSearchUseSemanticSearch": {
-            "type": "bool",
-            "defaultValue": false,
-            "metadata": {
-                "description": "Use semantic search"
-            }
-        },
-        "AzureSearchSemanticSearchConfig": {
-            "type": "string",
-            "defaultValue": "default",
-            "metadata": {
-                "description": "Semantic search config"
-            }
-        },
-        "AzureSearchIndexIsPrechunked": {
-            "type": "bool",
-            "defaultValue": false,
-            "metadata": {
-                "description": "Is the index prechunked"
-            }
-        },
-        "AzureSearchTopK": {
+        "N8NTimeoutMs": {
             "type": "int",
-            "defaultValue": 5,
+            "defaultValue": 30000,
             "metadata": {
-                "description": "Top K results"
-            }
-        },
-        "AzureSearchEnableInDomain": {
-            "type": "bool",
-            "defaultValue": false,
-            "metadata": {
-                "description": "Enable in domain"
-            }
-        },
-        "AzureSearchContentColumns": {
-            "type": "string",
-            "defaultValue": "content",
-            "metadata": {
-                "description": "Content columns"
-            }
-        },
-        "AzureSearchFilenameColumn": {
-            "type": "string",
-            "defaultValue": "filename",
-            "metadata": {
-                "description": "Filename column"
-            }
-        },
-        "AzureSearchTitleColumn": {
-            "type": "string",
-            "defaultValue": "title",
-            "metadata": {
-                "description": "Title column"
-            }
-        },
-        "AzureSearchUrlColumn": {
-            "type": "string",
-            "defaultValue": "url",
-            "metadata": {
-                "description": "Url column"
-            }
-        },
-        "AzureOpenAIResource": {
-            "type": "string",
-            "metadata": {
-                "description": "Name of Azure OpenAI Resource"
-            }
-        },
-        "AzureOpenAIModel": {
-            "type": "string",
-            "metadata": {
-                "description": "Azure OpenAI Model Deployment Name"
-            }
-        },
-        "AzureOpenAIModelName": {
-            "type": "string",
-            "defaultValue": "gpt-35-turbo",
-            "metadata": {
-                "description": "Azure OpenAI Model Name"
-            }
-        },
-        "AzureOpenAIKey": {
-            "type": "securestring",
-            "metadata": {
-                "description": "Azure OpenAI Key"
-            }
-        },
-        "AzureOpenAITemperature": {
-            "type": "int",
-            "defaultValue": 0,
-            "metadata": {
-                "description": "Azure OpenAI Temperature"
-            }
-        },
-        "AzureOpenAITopP": {
-            "type": "int",
-            "defaultValue": 1,
-            "metadata": {
-                "description": "Azure OpenAI Top P"
-            }
-        },
-        "AzureOpenAIMaxTokens": {
-            "type": "int",
-            "defaultValue": 1000,
-            "metadata": {
-                "description": "Azure OpenAI Max Tokens"
-            }
-        },
-        "AzureOpenAIStopSequence": {
-            "type": "string",
-            "defaultValue": "\n",
-            "metadata": {
-                "description": "Azure OpenAI Stop Sequence"
-            }
-        },
-        "AzureOpenAISystemMessage": {
-            "type": "string",
-            "defaultValue": "You are an AI assistant that helps people find information.",
-            "metadata": {
-                "description": "Azure OpenAI System Message"
-            }
-        },
-        "AzureOpenAIStream": {
-            "type": "bool",
-            "defaultValue": true,
-            "metadata": {
-                "description": "Whether or not to stream responses from Azure OpenAI"
-            }
-        },
-        "AzureSearchQueryType": {
-            "type": "string",
-            "defaultValue": "simple",
-            "allowedValues": [
-                "simple",
-                "semantic",
-                "vector",
-                "vectorSimpleHybrid",
-                "vectorSemanticHybrid"
-            ],
-            "metadata": {
-                "description": "Azure Search Query Type"
-            }
-        },
-        "AzureSearchVectorFields": {
-            "type": "string",
-            "defaultValue": "",
-            "metadata": {
-                "description": "Azure Search Vector Fields"
-            }
-        },
-        "AzureSearchPermittedGroupsField": {
-            "type": "string",
-            "defaultValue": "",
-            "metadata": {
-                "description": "Azure Search Permitted Groups Field"
-            }
-        },
-        "AzureSearchStrictness": {
-            "type": "int",
-            "defaultValue": 3,
-            "allowedValues": [
-                1,
-                2,
-                3,
-                4,
-                5
-            ],
-            "metadata": {
-                "description": "Azure Search Strictness"
-            }
-        },
-        "AzureOpenAIEmbeddingName": {
-            "type": "string",
-            "defaultValue": "",
-            "metadata": {
-                "description": "Azure OpenAI Embedding Deployment Name"
+                "description": "Timeout in milliseconds for n8n webhook calls"
             }
         },
         "WebAppEnableChatHistory": {
@@ -251,111 +72,117 @@
                 "description": "Enable chat history by deploying a Cosmos DB instance"
             }
         },
-        "ElasticsearchEndpoint": {
-            "type": "string",
-            "defaultValue": "",
-            "metadata": {
-                "description": "Endpoint to use to connect to an Elasticsearch cluster"
-            }
-        },
-        "ElasticsearchEncodedApiKey": {
-            "type": "securestring",
-            "defaultValue": "",
-            "metadata": {
-                "description": "Encoded API key credentials to use to connect to an Elasticsearch cluster"
-            }
-        },
-        "ElasticsearchIndex": {
-            "type": "string",
-            "defaultValue": "",
-            "metadata": {
-                "description": "Elasticsearch index to use for retrieving grounding data"
-            }
-        },
-        "ElasticsearchQueryType": {
-            "type": "string",
-            "defaultValue": "simple",
-            "metadata": {
-                "description": "Type of query to use for Elasticsearch data"
-            }
-        },
-        "ElasticsearchContentColumns": {
-            "type": "string",
-            "defaultValue": "",
-            "metadata": {
-                "description": "Elasticsearch index content columns"
-            }
-        },
-        "ElasticsearchFilenameColumn": {
-            "type": "string",
-            "defaultValue": "",
-            "metadata": {
-                "description": "Elasticsearch index filename column"
-            }
-        },
-        "ElasticsearchTitleColumn": {
-            "type": "string",
-            "defaultValue": "",
-            "metadata": {
-                "description": "Elasticsearch index title column"
-            }
-        },
-        "ElasticsearchUrlColumn": {
-            "type": "string",
-            "defaultValue": "",
-            "metadata": {
-                "description": "Elasticsearch index url column"
-            }
-        },
-        "ElasticsearchVectorColumns": {
-            "type": "string",
-            "defaultValue": "",
-            "metadata": {
-                "description": "Elasticsearch index vector columns"
-            }
-        },
-        "ElasticsearchTopK": {
-            "type": "int",
-            "defaultValue": 5,
-            "metadata": {
-                "description": "Top K results"
-            }
-        },
-        "ElasticsearchEnableInDomain": {
+        "UseExistingContainerRegistry": {
             "type": "bool",
             "defaultValue": false,
             "metadata": {
-                "description": "Enable in domain"
+                "description": "Use an existing Azure Container Registry instead of creating a new one"
             }
         },
-        "ElasticsearchStrictness": {
-            "type": "int",
-            "defaultValue": 3,
-            "allowedValues": [
-                1,
-                2,
-                3,
-                4,
-                5
-            ],
-            "metadata": {
-                "description": "Elasticsearch strictness"
-            }
-        },
-        "ElasticsearchEmbeddingModelId": {
+        "ExistingContainerRegistryName": {
             "type": "string",
             "defaultValue": "",
             "metadata": {
-                "description": "The model ID for a model deployed on Elasticsearch to use for generating embeddings for queries."
+                "description": "Name of an existing Azure Container Registry"
+            }
+        },
+        "ExistingContainerRegistryResourceGroup": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Resource group containing the existing Azure Container Registry"
+            }
+        },
+        "ExistingContainerRegistryLoginServer": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Login server for an existing Azure Container Registry"
+            }
+        },
+        "ExistingContainerRegistryUsername": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Username for an existing Azure Container Registry"
+            }
+        },
+        "ExistingContainerRegistryPassword": {
+            "type": "securestring",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Password for an existing Azure Container Registry"
+            }
+        },
+        "ContainerRegistryName": {
+            "type": "string",
+            "defaultValue": "[format('acr{0}', uniqueString(resourceGroup().id))]",
+            "metadata": {
+                "description": "Name of the Azure Container Registry to create"
+            }
+        },
+        "ContainerRegistrySku": {
+            "type": "string",
+            "defaultValue": "Basic",
+            "allowedValues": [
+                "Basic",
+                "Standard",
+                "Premium"
+            ],
+            "metadata": {
+                "description": "SKU for the Azure Container Registry"
+            }
+        },
+        "ContainerImageName": {
+            "type": "string",
+            "defaultValue": "air-gevo-regent-ui-azure",
+            "metadata": {
+                "description": "Container image name pushed to the registry"
+            }
+        },
+        "ContainerImageTag": {
+            "type": "string",
+            "defaultValue": "latest",
+            "metadata": {
+                "description": "Container image tag"
+            }
+        },
+        "ContainerRegistryLocation": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for the container registry or existing registry location"
+            }
+        },
+        "UseExistingCosmosAccount": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Use an existing Cosmos DB account instead of deploying a new one"
+            }
+        },
+        "ExistingCosmosAccountName": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Name of an existing Cosmos DB account"
+            }
+        },
+        "ExistingCosmosAccountResourceGroup": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Resource group containing the existing Cosmos DB account"
             }
         }
     },
     "variables": {
-        "WebAppImageName": "DOCKER|sampleappaoaichatgpt.azurecr.io/sample-app-aoai-chatgpt:latest",
+        "WebAppImageName": "[format('DOCKER|{0}/{1}:{2}', if(parameters('UseExistingContainerRegistry'), parameters('ExistingContainerRegistryLoginServer'), concat(parameters('ContainerRegistryName'), '.azurecr.io')), parameters('ContainerImageName'), parameters('ContainerImageTag'))]",
         "cosmosdb_account_name": "[format('db-{0}', parameters('WebsiteName'))]",
         "cosmosdb_database_name": "db_conversation_history",
         "cosmosdb_container_name": "conversations",
-        "roleDefinitionId": "00000000-0000-0000-0000-000000000002", // Cosmos DB Built-in Data Contributor Role
+        "roleDefinitionId": "00000000-0000-0000-0000-000000000002",
+        "acrPullRoleDefinitionId": "7f951dda-4ed3-4680-a7ca-43fe172d538d",
         "roleAssignmentId": "[guid(variables('roleDefinitionId'), parameters('WebsiteName'), resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosdb_account_name')))]"
     },
     "resources": [
@@ -393,112 +220,24 @@
                             "value": "[reference(resourceId('Microsoft.Insights/components', parameters('ApplicationInsightsName')), '2015-05-01').InstrumentationKey]"
                         },
                         {
-                            "name": "AZURE_SEARCH_SERVICE",
-                            "value": "[parameters('AzureSearchService')]"
+                            "name": "CHAT_PROVIDER",
+                            "value": "n8n"
                         },
                         {
-                            "name": "AZURE_SEARCH_INDEX",
-                            "value": "[parameters('AzureSearchIndex')]"
+                            "name": "DATASOURCE_TYPE",
+                            "value": "n8n"
                         },
                         {
-                            "name": "AZURE_SEARCH_KEY",
-                            "value": "[parameters('AzureSearchKey')]"
+                            "name": "N8N_WEBHOOK_URL",
+                            "value": "[parameters('N8NWebhookUrl')]"
                         },
                         {
-                            "name": "AZURE_SEARCH_USE_SEMANTIC_SEARCH",
-                            "value": "[parameters('AzureSearchUseSemanticSearch')]"
+                            "name": "N8N_BEARER_TOKEN",
+                            "value": "[parameters('N8NBearerToken')]"
                         },
                         {
-                            "name": "AZURE_SEARCH_SEMANTIC_SEARCH_CONFIG",
-                            "value": "[parameters('AzureSearchSemanticSearchConfig')]"
-                        },
-                        {
-                            "name": "AZURE_SEARCH_INDEX_IS_PRECHUNKED",
-                            "value": "[parameters('AzureSearchIndexIsPrechunked')]"
-                        },
-                        {
-                            "name": "AZURE_SEARCH_TOP_K",
-                            "value": "[parameters('AzureSearchTopK')]"
-                        },
-                        {
-                            "name": "AZURE_SEARCH_ENABLE_IN_DOMAIN",
-                            "value": "[parameters('AzureSearchEnableInDomain')]"
-                        },
-                        {
-                            "name": "AZURE_SEARCH_CONTENT_COLUMNS",
-                            "value": "[parameters('AzureSearchContentColumns')]"
-                        },
-                        {
-                            "name": "AZURE_SEARCH_FILENAME_COLUMN",
-                            "value": "[parameters('AzureSearchFilenameColumn')]"
-                        },
-                        {
-                            "name": "AZURE_SEARCH_TITLE_COLUMN",
-                            "value": "[parameters('AzureSearchTitleColumn')]"
-                        },
-                        {
-                            "name": "AZURE_SEARCH_URL_COLUMN",
-                            "value": "[parameters('AzureSearchUrlColumn')]"
-                        },
-                        {
-                            "name": "AZURE_OPENAI_RESOURCE",
-                            "value": "[parameters('AzureOpenAIResource')]"
-                        },
-                        {
-                            "name": "AZURE_OPENAI_MODEL",
-                            "value": "[parameters('AzureOpenAIModel')]"
-                        },
-                        {
-                            "name": "AZURE_OPENAI_KEY",
-                            "value": "[parameters('AzureOpenAIKey')]"
-                        },
-                        {
-                            "name": "AZURE_OPENAI_MODEL_NAME",
-                            "value": "[parameters('AzureOpenAIModelName')]"
-                        },
-                        {
-                            "name": "AZURE_OPENAI_TEMPERATURE",
-                            "value": "[parameters('AzureOpenAITemperature')]"
-                        },
-                        {
-                            "name": "AZURE_OPENAI_TOP_P",
-                            "value": "[parameters('AzureOpenAITopP')]"
-                        },
-                        {
-                            "name": "AZURE_OPENAI_MAX_TOKENS",
-                            "value": "[parameters('AzureOpenAIMaxTokens')]"
-                        },
-                        {
-                            "name": "AZURE_OPENAI_STOP_SEQUENCE",
-                            "value": "[parameters('AzureOpenAIStopSequence')]"
-                        },
-                        {
-                            "name": "AZURE_OPENAI_SYSTEM_MESSAGE",
-                            "value": "[parameters('AzureOpenAISystemMessage')]"
-                        },
-                        {
-                            "name": "AZURE_OPENAI_STREAM",
-                            "value": "[parameters('AzureOpenAIStream')]"
-                        },
-                        {
-                            "name": "AZURE_SEARCH_QUERY_TYPE",
-                            "value": "[parameters('AzureSearchQueryType')]"
-                        },
-                        {
-                            "name": "AZURE_SEARCH_VECTOR_COLUMNS",
-                            "value": "[parameters('AzureSearchVectorFields')]"
-                        },
-                        {
-                            "name": "AZURE_SEARCH_PERMITTED_GROUPS_COLUMN",
-                            "value": "[parameters('AzureSearchPermittedGroupsField')]"
-                        },
-                        {
-                            "name": "AZURE_SEARCH_STRICTNESS",
-                            "value": "[parameters('AzureSearchStrictness')]"
-                        },
-                        {
-                            "name": "AZURE_OPENAI_EMBEDDING_NAME",
-                            "value": "[parameters('AzureOpenAIEmbeddingName')]"
+                            "name": "N8N_TIMEOUT_MS",
+                            "value": "[parameters('N8NTimeoutMs')]"
                         },
                         {
                             "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
@@ -506,67 +245,15 @@
                         },
                         {
                             "name": "AZURE_COSMOSDB_ACCOUNT",
-                            "value": "[if(parameters('WebAppEnableChatHistory'), variables('cosmosdb_account_name'), '')]"
+                            "value": "[if(parameters('WebAppEnableChatHistory'), if(parameters('UseExistingCosmosAccount'), parameters('ExistingCosmosAccountName'), variables('cosmosdb_account_name')), '')]"
                         },
                         {
                             "name": "AZURE_COSMOSDB_DATABASE",
-                            "value": "[variables('cosmosdb_database_name')]"
+                            "value": "[if(parameters('WebAppEnableChatHistory'), variables('cosmosdb_database_name'), '')]"
                         },
                         {
                             "name": "AZURE_COSMOSDB_CONVERSATIONS_CONTAINER",
-                            "value": "[variables('cosmosdb_container_name')]"
-                        },
-                        {
-                            "name": "ELASTICSEARCH_ENDPOINT",
-                            "value": "[parameters('ElasticsearchEndpoint')]"
-                        },
-                        {
-                            "name": "ELASTICSEARCH_ENCODED_API_KEY",
-                            "value": "[parameters('ElasticsearchEncodedApiKey')]"
-                        },
-                        {
-                            "name": "ELASTICSEARCH_INDEX",
-                            "value": "[parameters('ElasticsearchIndex')]"
-                        },
-                        {
-                            "name": "ELASTICSEARCH_QUERY_TYPE",
-                            "value": "[parameters('ElasticsearchQueryType')]"
-                        },
-                        {
-                            "name": "ELASTICSEARCH_TOP_K",
-                            "value": "[parameters('ElasticsearchTopK')]"
-                        },
-                        {
-                            "name": "ELASTICSEARCH_ENABLE_IN_DOMAIN",
-                            "value": "[parameters('ElasticsearchEnableInDomain')]"
-                        },
-                        {
-                            "name": "ELASTICSEARCH_CONTENT_COLUMNS",
-                            "value": "[parameters('ElasticsearchContentColumns')]"
-                        },
-                        {
-                            "name": "ELASTICSEARCH_FILENAME_COLUMN",
-                            "value": "[parameters('ElasticsearchFilenameColumn')]"
-                        },
-                        {
-                            "name": "ELASTICSEARCH_TITLE_COLUMN",
-                            "value": "[parameters('ElasticsearchTitleColumn')]"
-                        },
-                        {
-                            "name": "ELASTICSEARCH_URL_COLUMN",
-                            "value": "[parameters('ElasticsearchUrlColumn')]"
-                        },
-                        {
-                            "name": "ELASTICSEARCH_VECTOR_COLUMNS",
-                            "value": "[parameters('ElasticsearchVectorColumns')]"
-                        },
-                        {
-                            "name": "ELASTICSEARCH_STRICTNESS",
-                            "value": "[parameters('ElasticsearchStrictness')]"
-                        },
-                        {
-                            "name": "ELASTICSEARCH_EMBEDDING_MODEL_ID",
-                            "value": "[parameters('ElasticsearchEmbeddingModelId')]"
+                            "value": "[if(parameters('WebAppEnableChatHistory'), variables('cosmosdb_container_name'), '')]"
                         },
                         {
                             "name": "UWSGI_PROCESSES",
@@ -575,9 +262,22 @@
                         {
                             "name": "UWSGI_THREADS",
                             "value": "2"
-                        }                        
+                        },
+                        {
+                            "name": "DOCKER_REGISTRY_SERVER_URL",
+                            "value": "[concat('https://', if(parameters('UseExistingContainerRegistry'), parameters('ExistingContainerRegistryLoginServer'), concat(parameters('ContainerRegistryName'), '.azurecr.io')))]"
+                        },
+                        {
+                            "name": "DOCKER_REGISTRY_SERVER_USERNAME",
+                            "value": "[if(parameters('UseExistingContainerRegistry'), parameters('ExistingContainerRegistryUsername'), '')]"
+                        },
+                        {
+                            "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
+                            "value": "[if(parameters('UseExistingContainerRegistry'), parameters('ExistingContainerRegistryPassword'), '')]"
+                        }
                     ],
-                    "linuxFxVersion": "[variables('WebAppImageName')]"
+                    "linuxFxVersion": "[variables('WebAppImageName')]",
+                    "acrUseManagedIdentityCreds": "[not(parameters('UseExistingContainerRegistry'))]"
                 }
             }
         },
@@ -595,7 +295,21 @@
             "kind": "web"
         },
         {
-            "condition": "[parameters('WebAppEnableChatHistory')]",
+            "condition": "[not(parameters('UseExistingContainerRegistry'))]",
+            "type": "Microsoft.ContainerRegistry/registries",
+            "apiVersion": "2023-07-01",
+            "name": "[parameters('ContainerRegistryName')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[parameters('ContainerRegistrySku')]"
+            },
+            "properties": {
+                "adminUserEnabled": false
+            },
+            "dependsOn": []
+        },
+        {
+            "condition": "[and(parameters('WebAppEnableChatHistory'), not(parameters('UseExistingCosmosAccount')))]",
             "type": "Microsoft.DocumentDB/databaseAccounts",
             "apiVersion": "2023-04-15",
             "name": "[variables('cosmosdb_account_name')]",
@@ -621,7 +335,7 @@
             }
         },
         {
-            "condition": "[parameters('WebAppEnableChatHistory')]",
+            "condition": "[and(parameters('WebAppEnableChatHistory'), not(parameters('UseExistingCosmosAccount')))]",
             "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
             "apiVersion": "2023-04-15",
             "name": "[concat(variables('cosmosdb_account_name'), '/', variables('cosmosdb_database_name'))]",
@@ -635,7 +349,7 @@
             }
         },
         {
-            "condition": "[parameters('WebAppEnableChatHistory')]",
+            "condition": "[and(parameters('WebAppEnableChatHistory'), not(parameters('UseExistingCosmosAccount')))]",
             "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
             "apiVersion": "2023-04-15",
             "name": "[concat(variables('cosmosdb_account_name'), '/', variables('cosmosdb_database_name'), '/conversations')]",
@@ -670,17 +384,60 @@
             }
         },
         {
-            "condition": "[parameters('WebAppEnableChatHistory')]",
+            "condition": "[and(parameters('WebAppEnableChatHistory'), not(parameters('UseExistingCosmosAccount')))]",
             "type": "Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments",
             "apiVersion": "2021-04-15",
             "name": "[format('{0}/{1}', variables('cosmosdb_account_name'), variables('roleAssignmentId'))]",
             "properties": {
                 "roleDefinitionId": "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions', split(format('{0}/{1}', variables('cosmosdb_account_name'), variables('roleDefinitionId')), '/')[0], split(format('{0}/{1}', variables('cosmosdb_account_name'), variables('roleDefinitionId')), '/')[1])]",
-                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('WebsiteName')), '2021-02-01', 'Full').identity.principalId]",
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('WebsiteName')), '2022-03-01', 'Full').identity.principalId]",
                 "scope": "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosdb_account_name'))]"
             },
             "dependsOn": [
                 "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosdb_account_name'))]"
+            ]
+        },
+        {
+            "condition": "[and(parameters('WebAppEnableChatHistory'), parameters('UseExistingCosmosAccount'))]",
+            "type": "Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments",
+            "apiVersion": "2021-04-15",
+            "name": "[format('{0}/{1}', parameters('ExistingCosmosAccountName'), variables('roleAssignmentId'))]",
+            "properties": {
+                "roleDefinitionId": "[resourceId(parameters('ExistingCosmosAccountResourceGroup'), 'Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions', parameters('ExistingCosmosAccountName'), variables('roleDefinitionId'))]",
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('WebsiteName')), '2022-03-01', 'Full').identity.principalId]",
+                "scope": "[resourceId(parameters('ExistingCosmosAccountResourceGroup'), 'Microsoft.DocumentDB/databaseAccounts', parameters('ExistingCosmosAccountName'))]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('WebsiteName'))]"
+            ]
+        },
+        {
+            "condition": "[not(parameters('UseExistingContainerRegistry'))]",
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2022-04-01",
+            "name": "[guid(resourceId('Microsoft.ContainerRegistry/registries', parameters('ContainerRegistryName')), parameters('WebsiteName'), variables('acrPullRoleDefinitionId'))]",
+            "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('acrPullRoleDefinitionId'))]",
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('WebsiteName')), '2022-03-01', 'Full').identity.principalId]",
+                "scope": "[resourceId('Microsoft.ContainerRegistry/registries', parameters('ContainerRegistryName'))]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('WebsiteName'))]",
+                "[resourceId('Microsoft.ContainerRegistry/registries', parameters('ContainerRegistryName'))]"
+            ]
+        },
+        {
+            "condition": "[and(parameters('UseExistingContainerRegistry'), not(empty(parameters('ExistingContainerRegistryName'))), not(empty(parameters('ExistingContainerRegistryResourceGroup'))))]",
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2022-04-01",
+            "name": "[guid(resourceId(parameters('ExistingContainerRegistryResourceGroup'), 'Microsoft.ContainerRegistry/registries', parameters('ExistingContainerRegistryName')), parameters('WebsiteName'), variables('acrPullRoleDefinitionId'))]",
+            "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('acrPullRoleDefinitionId'))]",
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('WebsiteName')), '2022-03-01', 'Full').identity.principalId]",
+                "scope": "[resourceId(parameters('ExistingContainerRegistryResourceGroup'), 'Microsoft.ContainerRegistry/registries', parameters('ExistingContainerRegistryName'))]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('WebsiteName'))]"
             ]
         }
     ]
