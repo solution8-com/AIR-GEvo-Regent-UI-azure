@@ -8,7 +8,7 @@ import { ThumbDislike20Filled, ThumbLike20Filled } from '@fluentui/react-icons'
 import DOMPurify from 'dompurify'
 import remarkGfm from 'remark-gfm'
 import supersub from 'remark-supersub'
-import { AskResponse, Citation, Feedback, historyMessageFeedback } from '../../api'
+import { AskResponse, Citation, Feedback, historyMessageFeedback, historyMessageRating } from '../../api'
 import { XSSAllowTags, XSSAllowAttributes } from '../../constants/sanatizeAllowables'
 import { AppStateContext } from '../../state/AppProvider'
 
@@ -37,6 +37,7 @@ export const Answer = ({ answer, onCitationClicked, onExectResultClicked }: Prop
   const parsedAnswer = useMemo(() => parseAnswer(answer), [answer])
   const [chevronIsExpanded, setChevronIsExpanded] = useState(isRefAccordionOpen)
   const [feedbackState, setFeedbackState] = useState(initializeAnswerFeedback(answer))
+  const [msgratingState, setMsgratingState] = useState<number | null>(answer.msgrating ?? null)
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false)
   const [showReportInappropriateFeedback, setShowReportInappropriateFeedback] = useState(false)
   const [negativeFeedbackList, setNegativeFeedbackList] = useState<Feedback[]>([])
@@ -149,6 +150,64 @@ export const Answer = ({ answer, onCitationClicked, onExectResultClicked }: Prop
     setIsFeedbackDialogOpen(false)
     setShowReportInappropriateFeedback(false)
     setNegativeFeedbackList([])
+  }
+
+  const onThumbsUpClicked = async () => {
+    if (answer.message_id == undefined) return
+
+    let newRating: number | null
+    // Toggle: if already 1, clear it; otherwise set to 1
+    if (msgratingState === 1) {
+      newRating = null
+    } else {
+      newRating = 1
+    }
+    
+    const previousRating = msgratingState
+    setMsgratingState(newRating)
+    
+    // Update message rating in db
+    try {
+      const response = await historyMessageRating(answer.message_id, newRating)
+      if (!response.ok) {
+        // Revert on error
+        setMsgratingState(previousRating)
+        console.error('Failed to update rating')
+      }
+    } catch (error) {
+      // Revert on error
+      setMsgratingState(previousRating)
+      console.error('Error updating rating:', error)
+    }
+  }
+
+  const onThumbsDownClicked = async () => {
+    if (answer.message_id == undefined) return
+
+    let newRating: number | null
+    // Toggle: if already -1, clear it; otherwise set to -1
+    if (msgratingState === -1) {
+      newRating = null
+    } else {
+      newRating = -1
+    }
+    
+    const previousRating = msgratingState
+    setMsgratingState(newRating)
+    
+    // Update message rating in db
+    try {
+      const response = await historyMessageRating(answer.message_id, newRating)
+      if (!response.ok) {
+        // Revert on error
+        setMsgratingState(previousRating)
+        console.error('Failed to update rating')
+      }
+    } catch (error) {
+      // Revert on error
+      setMsgratingState(previousRating)
+      console.error('Error updating rating:', error)
+    }
   }
 
   const UnhelpfulFeedbackContent = () => {
@@ -326,6 +385,45 @@ export const Answer = ({ answer, onCitationClicked, onExectResultClicked }: Prop
           <Stack.Item className={styles.answerDisclaimerContainer}>
             <span className={styles.answerDisclaimer}>AI-generated content may be incorrect</span>
           </Stack.Item>
+          {FEEDBACK_ENABLED && answer.message_id !== undefined && (
+            <Stack.Item>
+              <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
+                <Text style={{ fontSize: '12px', color: 'slategray' }}>Rate:</Text>
+                <span
+                  onClick={() => onThumbsUpClicked()}
+                  onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onThumbsUpClicked()}
+                  style={{
+                    cursor: 'pointer',
+                    fontSize: '18px',
+                    userSelect: 'none',
+                    opacity: msgratingState === 1 ? 1 : 0.4,
+                    filter: msgratingState === 1 ? 'none' : 'grayscale(50%)'
+                  }}
+                  aria-label="Thumbs up"
+                  role="button"
+                  tabIndex={0}
+                >
+                  👍
+                </span>
+                <span
+                  onClick={() => onThumbsDownClicked()}
+                  onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onThumbsDownClicked()}
+                  style={{
+                    cursor: 'pointer',
+                    fontSize: '18px',
+                    userSelect: 'none',
+                    opacity: msgratingState === -1 ? 1 : 0.4,
+                    filter: msgratingState === -1 ? 'none' : 'grayscale(50%)'
+                  }}
+                  aria-label="Thumbs down"
+                  role="button"
+                  tabIndex={0}
+                >
+                  👎
+                </span>
+              </Stack>
+            </Stack.Item>
+          )}
           {!!answer.exec_results?.length && (
             <Stack.Item onKeyDown={e => (e.key === 'Enter' || e.key === ' ' ? toggleIsRefAccordionOpen() : null)}>
               <Stack style={{ width: '100%' }}>

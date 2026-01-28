@@ -98,7 +98,8 @@ export const historyRead = async (convId: string): Promise<ChatMessage[]> => {
             role: msg.role,
             date: msg.createdAt,
             content: msg.content,
-            feedback: msg.feedback ?? undefined
+            feedback: msg.feedback ?? undefined,
+            msgrating: msg.msgrating ?? undefined
           }
           messages.push(message)
         })
@@ -343,6 +344,32 @@ export const historyMessageFeedback = async (messageId: string, feedback: string
     })
     .catch(_err => {
       console.error('There was an issue logging feedback.')
+      const errRes: Response = {
+        ...new Response(),
+        ok: false,
+        status: 500
+      }
+      return errRes
+    })
+  return response
+}
+
+export const historyMessageRating = async (messageId: string, msgrating: number | null): Promise<Response> => {
+  const response = await fetch('/history/message_rating', {
+    method: 'POST',
+    body: JSON.stringify({
+      message_id: messageId,
+      msgrating: msgrating
+    }),
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+    .then(res => {
+      return res
+    })
+    .catch(_err => {
+      console.error('There was an issue logging rating.')
       const errRes: Response = {
         ...new Response(),
         ok: false,
