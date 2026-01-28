@@ -884,6 +884,10 @@ async def update_message_rating():
     try:
         if not message_id:
             return jsonify({"error": "message_id is required"}), 400
+        
+        # Validate msgrating is one of the expected values
+        if msgrating is not None and msgrating not in [1, -1]:
+            return jsonify({"error": "msgrating must be 1 (thumbs up), -1 (thumbs down), or null"}), 400
 
         ## update the message rating in cosmos
         updated_message = await current_app.cosmos_conversation_client.update_message_rating(
@@ -924,7 +928,9 @@ async def update_message_rating():
                     # Send the webhook asynchronously (fire-and-forget)
                     timeout_ms = app_settings.n8n.timeout_ms if app_settings.n8n else 15000
                     async with httpx.AsyncClient(timeout=float(timeout_ms) / 1000) as http_client:
-                        await http_client.post(app_settings.n8n.webhook_url, json=n8n_payload, headers=headers)
+                        webhook_response = await http_client.post(app_settings.n8n.webhook_url, json=n8n_payload, headers=headers)
+                        if webhook_response.status_code >= 400:
+                            logging.warning(f"n8n webhook for rating update returned status {webhook_response.status_code}")
             except Exception as webhook_error:
                 # Log but don't fail the request if webhook fails
                 logging.warning(f"Failed to send n8n webhook for rating update: {webhook_error}")

@@ -163,10 +163,22 @@ export const Answer = ({ answer, onCitationClicked, onExectResultClicked }: Prop
       newRating = 1
     }
     
+    const previousRating = msgratingState
     setMsgratingState(newRating)
     
     // Update message rating in db
-    await historyMessageRating(answer.message_id, newRating)
+    try {
+      const response = await historyMessageRating(answer.message_id, newRating)
+      if (!response.ok) {
+        // Revert on error
+        setMsgratingState(previousRating)
+        console.error('Failed to update rating')
+      }
+    } catch (error) {
+      // Revert on error
+      setMsgratingState(previousRating)
+      console.error('Error updating rating:', error)
+    }
   }
 
   const onThumbsDownClicked = async () => {
@@ -180,10 +192,22 @@ export const Answer = ({ answer, onCitationClicked, onExectResultClicked }: Prop
       newRating = -1
     }
     
+    const previousRating = msgratingState
     setMsgratingState(newRating)
     
     // Update message rating in db
-    await historyMessageRating(answer.message_id, newRating)
+    try {
+      const response = await historyMessageRating(answer.message_id, newRating)
+      if (!response.ok) {
+        // Revert on error
+        setMsgratingState(previousRating)
+        console.error('Failed to update rating')
+      }
+    } catch (error) {
+      // Revert on error
+      setMsgratingState(previousRating)
+      console.error('Error updating rating:', error)
+    }
   }
 
   const UnhelpfulFeedbackContent = () => {
@@ -367,29 +391,35 @@ export const Answer = ({ answer, onCitationClicked, onExectResultClicked }: Prop
                 <Text style={{ fontSize: '12px', color: 'slategray' }}>Rate:</Text>
                 <span
                   onClick={() => onThumbsUpClicked()}
+                  onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onThumbsUpClicked()}
                   style={{
                     cursor: 'pointer',
                     fontSize: '18px',
-                    userSelect: 'none'
+                    userSelect: 'none',
+                    opacity: msgratingState === 1 ? 1 : 0.4,
+                    filter: msgratingState === 1 ? 'none' : 'grayscale(50%)'
                   }}
                   aria-label="Thumbs up"
                   role="button"
                   tabIndex={0}
                 >
-                  {msgratingState === 1 ? '👍' : '👍🏻'}
+                  👍
                 </span>
                 <span
                   onClick={() => onThumbsDownClicked()}
+                  onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onThumbsDownClicked()}
                   style={{
                     cursor: 'pointer',
                     fontSize: '18px',
-                    userSelect: 'none'
+                    userSelect: 'none',
+                    opacity: msgratingState === -1 ? 1 : 0.4,
+                    filter: msgratingState === -1 ? 'none' : 'grayscale(50%)'
                   }}
                   aria-label="Thumbs down"
                   role="button"
                   tabIndex={0}
                 >
-                  {msgratingState === -1 ? '👎' : '👎🏻'}
+                  👎
                 </span>
               </Stack>
             </Stack.Item>
