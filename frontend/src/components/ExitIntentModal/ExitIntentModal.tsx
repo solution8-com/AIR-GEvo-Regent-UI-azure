@@ -46,6 +46,7 @@ export const ExitIntentModal: React.FC<ExitIntentModalProps> = ({
   const [isLoadingIntents, { setTrue: startLoading, setFalse: stopLoading }] = useBoolean(false)
 
   // Fetch intent classification when modal opens
+  // We capture messages at the time modal opens and don't re-fetch if they change during interaction
   useEffect(() => {
     if (!isOpen) {
       return
@@ -63,7 +64,8 @@ export const ExitIntentModal: React.FC<ExitIntentModalProps> = ({
 
     const fetchIntents = async () => {
       try {
-        // Prepare messages for classification
+        // Prepare messages for classification (capture at time of opening)
+        const simplifiedMessages = messages.map(msg => {
         const simplifiedMessages = messages.map(msg => {
           let content = msg.content
           if (typeof content !== 'string') {
@@ -110,7 +112,8 @@ export const ExitIntentModal: React.FC<ExitIntentModalProps> = ({
     }
 
     fetchIntents()
-  }, [isOpen, conversationId, messages, startLoading, stopLoading])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, conversationId, startLoading, stopLoading])
 
   const handleIntentClick = useCallback((intent: ExitIntent) => {
     setSelectedIntent(intent.label)

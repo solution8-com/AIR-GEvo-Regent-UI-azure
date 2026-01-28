@@ -30,9 +30,6 @@ export const useExitIntent = ({
   const flashOverlayRef = useRef<HTMLDivElement | null>(null)
 
   const isQualified = hasUserMessage && hasAssistantMessage
-  const hasSubmitted = conversationId
-    ? sessionStorage.getItem(`exit_intent_submitted_${conversationId}`) === 'true'
-    : false
 
   const showWhiteFlash = useCallback(() => {
     // Create flash overlay if it doesn't exist
@@ -77,7 +74,8 @@ export const useExitIntent = ({
       return
     }
 
-    // Check if already submitted
+    // Check if already submitted (check at runtime for fresh value)
+    const hasSubmitted = sessionStorage.getItem(`exit_intent_submitted_${conversationId}`) === 'true'
     if (hasSubmitted) {
       return
     }
@@ -93,7 +91,7 @@ export const useExitIntent = ({
     // Show flash and modal
     showWhiteFlash()
     showModal()
-  }, [enabled, isQualified, conversationId, hasSubmitted, showWhiteFlash, showModal])
+  }, [enabled, isQualified, conversationId, showWhiteFlash, showModal])
 
   // Mouse leave at top edge trigger
   useEffect(() => {

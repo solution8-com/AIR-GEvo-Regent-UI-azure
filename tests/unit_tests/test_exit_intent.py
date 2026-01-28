@@ -1,4 +1,5 @@
 import json
+import asyncio
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 from app import create_app
@@ -142,7 +143,6 @@ class TestIntentClassificationEndpoint:
         mock_settings.github_models = mock_gh_settings
         
         # Mock timeout
-        import asyncio
         mock_client = AsyncMock()
         mock_client.post = AsyncMock(side_effect=asyncio.TimeoutError())
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)

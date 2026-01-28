@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useContext, useLayoutEffect } from 'react'
+import { useRef, useState, useEffect, useContext, useLayoutEffect, useMemo } from 'react'
 import { CommandBarButton, IconButton, Dialog, DialogType, Stack } from '@fluentui/react'
 import { SquareRegular, ShieldLockRegular, ErrorCircleRegular } from '@fluentui/react-icons'
 
@@ -69,10 +69,10 @@ const Chat = () => {
   const [logo, setLogo] = useState('')
   const [answerId, setAnswerId] = useState<string>('')
 
-  // Exit intent modal
+  // Exit intent modal - memoize message checks to avoid recalculation on every render
   const exitIntentEnabled = CHAT_PROVIDER !== 'n8n'
-  const hasUserMessage = messages.some(m => m.role === 'user')
-  const hasAssistantMessage = messages.some(m => m.role === 'assistant')
+  const hasUserMessage = useMemo(() => messages.some(m => m.role === 'user'), [messages])
+  const hasAssistantMessage = useMemo(() => messages.some(m => m.role === 'assistant'), [messages])
   const conversationId = appStateContext?.state.currentChat?.id || null
   
   const { isModalOpen, hideModal } = useExitIntent({

@@ -724,6 +724,9 @@ async def intent_classification():
     Exit intent classification endpoint using GitHub Models API.
     Returns intent suggestions based on conversation context.
     """
+    import re
+    
+    request_json = None
     try:
         if not request.is_json:
             return jsonify({"error": "request must be json", "fallback": True}), 200
@@ -835,9 +838,9 @@ Rules:
         content = result["choices"][0].get("message", {}).get("content", "")
         
         # Parse JSON from content
-        import re
         # Extract JSON array from the response (handle markdown code blocks)
-        json_match = re.search(r'\[[\s\S]*\]', content)
+        # Use non-greedy match to get first JSON array
+        json_match = re.search(r'\[[\s\S]*?\]', content)
         if not json_match:
             logging.warning(f"Could not extract JSON from response: {content}")
             return jsonify({
@@ -883,22 +886,25 @@ Rules:
         
     except asyncio.TimeoutError:
         logging.warning("GitHub Models API timeout")
+        conv_id = request_json.get("conversation_id", "") if request_json else ""
         return jsonify({
-            "conversation_id": request_json.get("conversation_id", ""),
+            "conversation_id": conv_id,
             "error": "Request timeout",
             "fallback": True
         }), 200
     except json.JSONDecodeError as e:
         logging.warning(f"JSON decode error: {str(e)}")
+        conv_id = request_json.get("conversation_id", "") if request_json else ""
         return jsonify({
-            "conversation_id": request_json.get("conversation_id", ""),
+            "conversation_id": conv_id,
             "error": "Invalid JSON in response",
             "fallback": True
         }), 200
     except Exception as e:
         logging.exception("Exception in /api/intent_classification")
+        conv_id = request_json.get("conversation_id", "") if request_json else ""
         return jsonify({
-            "conversation_id": request_json.get("conversation_id", ""),
+            "conversation_id": conv_id,
             "error": str(e),
             "fallback": True
         }), 200
